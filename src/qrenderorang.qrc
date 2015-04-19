@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/" >
+        <file>../images/splash.png</file>
+        <file>../grammar/formats.qxf</file>
+        <file>../grammar/glsl.qnfa</file>
+        <file>../grammar/glsl.qxf</file>
+    </qresource>
+</RCC>
