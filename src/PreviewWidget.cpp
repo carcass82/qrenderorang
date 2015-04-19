@@ -2,7 +2,7 @@
  *                                                                          *
  * QRenderOrang - an IDE for GLSL shader authoring                          *
  *                                                                          *
- * copyright (c) 2008 Carlo Casta <ccasta@users.sourceforge.net>            *
+ * Copyright (c) 2008 Carlo Casta <carlo.casta@gmail.com>                   *
  *                                                                          *
  * This program is free software; you can redistribute it and/or            *
  * modify it under the terms of the GNU General Public License              *
@@ -34,7 +34,6 @@ PreviewWidget::PreviewWidget(QWidget* parent)
     , m_Shader(nullptr)
     , m_Initialized(false)
 {
-    m_Meshes.append(new Mesh());
 }
 
 PreviewWidget::~PreviewWidget()
@@ -64,6 +63,10 @@ void PreviewWidget::initializeGL()
 
     glewExperimental = GL_TRUE;
     m_Initialized = (glewInit() == GLEW_OK);
+
+    Mesh* quad = new Mesh();
+    quad->Load("/random/path");
+    m_Meshes.append(quad);
 }
 
 void PreviewWidget::resizeGL(int width, int height)
@@ -72,10 +75,9 @@ void PreviewWidget::resizeGL(int width, int height)
 
     glMatrixMode(GL_PROJECTION);
 
-    height = std::max(1, height);
-
     //gluPerspective(45.0f, (GLfloat)width / (GLfloat)height, 0.01f, 1000.0f);
-    glm::mat4 projection = glm::perspective(45.0f, (GLfloat)width / (GLfloat)height, 0.1f, 1000.f);
+    height = std::max(1, height);
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)height, 0.1f, 1000.f);
     glLoadMatrixf(glm::value_ptr(projection));
 
     glMatrixMode(GL_MODELVIEW);

@@ -2,7 +2,7 @@
  *                                                                          *
  * QRenderOrang - an IDE for GLSL shader authoring                          *
  *                                                                          *
- * copyright (c) 2008 Carlo Casta <ccasta@users.sourceforge.net>            *
+ * Copyright (c) 2008 Carlo Casta <carlo.casta@gmail.com>                   *
  *                                                                          *
  * This program is free software; you can redistribute it and/or            *
  * modify it under the terms of the GNU General Public License              *
@@ -29,17 +29,16 @@
 
 int main(int argc, char** argv)
 {
-	QApplication a(argc, argv);
+	QApplication app(argc, argv);
 
-    QSplashScreen* splash = new QSplashScreen(QPixmap(":/images/splash.png"), Qt::WindowStaysOnTopHint);
-    splash->showMessage("Loading QRenderOrang...", Qt::AlignBottom | Qt::AlignLeft, Qt::white);
-	splash->show();
+    QSplashScreen splash(QPixmap(":/images/splash.png"), Qt::WindowStaysOnTopHint);
+    splash.showMessage("Loading QRenderOrang...", Qt::AlignBottom | Qt::AlignLeft, Qt::white);
+	splash.show();
 
 	MainWidget w;
 	w.show();
 
-	splash->finish(&w);
-	delete splash;
+	splash.finish(&w);
 
-	return a.exec();
+	return app.exec();
 }

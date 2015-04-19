@@ -2,7 +2,7 @@
  *                                                                          *
  * QRenderOrang - an IDE for GLSL shader authoring                          *
  *                                                                          *
- * copyright (c) 2008 Carlo Casta <ccasta@users.sourceforge.net>            *
+ * Copyright (c) 2008 Carlo Casta <carlo.casta@gmail.com>                   *
  *                                                                          *
  * This program is free software; you can redistribute it and/or            *
  * modify it under the terms of the GNU General Public License              *
@@ -25,12 +25,30 @@
 #pragma once
 
 #include <GL/glew.h>
+
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+
 #include <QString>
+#include <QVector>
 
 class Mesh
 {
 public:
-    virtual ~Mesh() {};
-	virtual void Draw();
-	virtual void Load(const QString&) { }
+	void Draw();
+    void Load(const QString& filePath);
+
+private:
+    GLuint m_VBuffer;
+    GLuint m_IBuffer;
+
+    struct Vertex
+    {
+        glm::vec3 pos;
+        glm::vec3 normal;
+        glm::vec2 uv0;
+    };
+
+    QVector<Vertex> m_Vertices;
+    QVector<uint32_t> m_Indices;
 };

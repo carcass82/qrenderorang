@@ -39,7 +39,7 @@ Shader::~Shader()
 
 void Shader::render(int pass)
 {
-    Q_UNUSED(pass)
+    Q_UNUSED(pass);
 
     if (m_usable)
     {
@@ -60,33 +60,35 @@ void Shader::compileAndLink()
         return;
     }
 
-    const GLchar* vertSource = m_vertSource.toLocal8Bit().data();
-    GLint vertSourceLen = m_vertSource.length();
-
-    // compile vertex shader
     GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertShader, 1, &vertSource, &vertSourceLen);
-    glCompileShader(vertShader);
+    {
 
-    const GLchar* fragSource = m_fragSource.toLocal8Bit().data();
-    GLint fragSourceLen = m_fragSource.length();
+        QByteArray tmpVertSource = m_vertSource.toLocal8Bit();
+        const GLchar* vertSource = tmpVertSource.data();
+        GLint vertSourceLen = tmpVertSource.length();
 
-    // compile fragment shader
+        glShaderSource(vertShader, 1, &vertSource, &vertSourceLen);
+        glCompileShader(vertShader);
+    }
+    CheckError(vertShader, GL_COMPILE_STATUS);
+
+
     GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragShader, 1, &fragSource, &fragSourceLen);
-    glCompileShader(fragShader);
+    {
+        QByteArray tmpFragSource = m_fragSource.toLocal8Bit();
+        const GLchar* fragSource = tmpFragSource.data();
+        GLint fragSourceLen = tmpFragSource.length();
+
+        glShaderSource(fragShader, 1, &fragSource, &fragSourceLen);
+        glCompileShader(fragShader);
+    }
+    CheckError(fragShader, GL_COMPILE_STATUS);
 
     glAttachShader(m_shaderProgram, vertShader);
     glAttachShader(m_shaderProgram, fragShader);
     glLinkProgram(m_shaderProgram);
 
-    GLint res;
-    glGetShaderiv(m_shaderProgram, GL_LINK_STATUS, &res);
-    if (res == GL_FALSE)
-    {
-        FillInfoLog(m_shaderProgram);
-    }
-    else
+    if (CheckError(m_shaderProgram, GL_LINK_STATUS))
     {
         m_compileLog = "OK";
 
@@ -100,19 +102,56 @@ void Shader::compileAndLink()
     glDeleteShader(fragShader);
 }
 
+bool Shader::CheckError(GLuint obj, GLuint check)
+{
+    GLint res;
+
+    if (glIsProgram(obj))
+    {
+        glGetProgramiv(obj, check, &res);
+    }
+    else if (glIsShader(obj))
+    {
+        glGetShaderiv(obj, check, &res);
+    }
+    else
+    {
+        res = GL_FALSE;
+    }
+
+    if (res == GL_FALSE)
+    {
+        FillInfoLog(obj);
+    }
+    
+    return (res == GL_TRUE);
+}
+
 void Shader::FillInfoLog(GLuint obj)
 {
     GLint infologLength = 0;
-    glGetShaderiv(obj, GL_INFO_LOG_LENGTH, &infologLength);
-
+    if (glIsProgram(obj))
+    {
+        glGetProgramiv(obj, GL_INFO_LOG_LENGTH, &infologLength);
+    }
+    else if (glIsShader(obj))
+    {
+        glGetShaderiv(obj, GL_INFO_LOG_LENGTH, &infologLength);
+    }
+    
+    m_compileLog = "FAILED\n";
     if (infologLength > 0)
     {
-        char* infoLog = new char[infologLength];
-        glGetShaderInfoLog(obj, infologLength, nullptr, infoLog);
+        QVector<char> infoLog(infologLength);
+        if (glIsProgram(obj))
+        {
+            glGetProgramInfoLog(obj, infologLength, nullptr, &infoLog[0]);
+        }
+        else
+        {
+            glGetShaderInfoLog(obj, infologLength, nullptr, &infoLog[0]);
+        }
 
-        m_compileLog = "FAILED\n";
-        m_compileLog.append(infoLog);
-
-        delete[] infoLog;
+        m_compileLog.append(&infoLog[0]);
     }
 }

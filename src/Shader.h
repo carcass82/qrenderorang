@@ -2,7 +2,7 @@
  *                                                                          *
  * QRenderOrang - an IDE for GLSL shader authoring                          *
  *                                                                          *
- * copyright (c) 2008 Carlo Casta <ccasta@users.sourceforge.net>            *
+ * Copyright (c) 2008 Carlo Casta <carlo.casta@gmail.com>                   *
  *                                                                          *
  * This program is free software; you can redistribute it and/or            *
  * modify it under the terms of the GNU General Public License              *
@@ -25,6 +25,7 @@
 
 #include <GL/glew.h>
 
+#include <QVector>
 #include <QList>
 #include <QString>
 
@@ -39,10 +40,11 @@ public:
     bool isUsable();
     void compileAndLink();
     void setSource(const QString& v, const QString& f);
-    QString compilationLog();
+    const QString& compilationLog();
 
 private:
-    void FillInfoLog(GLuint);
+    bool CheckError(GLuint obj, GLuint check);
+    void FillInfoLog(GLuint obj);
 
     int m_totPasses;
     int m_curPass;
@@ -70,7 +72,7 @@ inline void Shader::setSource(const QString &v, const QString &f)
     m_fragSource = f;
 }
 
-inline QString Shader::compilationLog()
+inline const QString& Shader::compilationLog()
 {
     return m_compileLog;
 }

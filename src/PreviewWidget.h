@@ -2,7 +2,7 @@
  *                                                                          *
  * QRenderOrang - an IDE for GLSL shader authoring                          *
  *                                                                          *
- * copyright (c) 2008 Carlo Casta <ccasta@users.sourceforge.net>            *
+ * Copyright (c) 2008 Carlo Casta <carlo.casta@gmail.com>                   *
  *                                                                          *
  * This program is free software; you can redistribute it and/or            *
  * modify it under the terms of the GNU General Public License              *
@@ -26,6 +26,7 @@
 
 #include <GL/glew.h>
 
+#define GLM_FORCE_RADIANS
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
