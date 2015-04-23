@@ -13,7 +13,7 @@
     ##############################################################################
 
 ## REQUIREMENTS: ##
-* Qt 5 [http://trolltech.com]
+* Qt 5 [ http://www.qt.io ]
 
 ## QUICK BUILDING: ##
 * cd into the project source directory

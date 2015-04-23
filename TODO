@@ -1,13 +1,33 @@
-##############################################################################
-#    _____                                                                   #
-#   / ___ \                                                                  #
-#  / /   \ \                                                                 #
-#  \ \___/ /                                                                 #
-#   \__  _RenderOrang                                                        #
-#      \_\           v0.1                                                    #
-#                                                                            #
-#  (c) 2009 - Carlo Casta <ccasta@users.sourceforge.net>                     #
-#                                                                            #
-##############################################################################
+    ##############################################################################
+    #                                                                            #
+    #     ____    ____                 __          ____                          #
+    #    / __ \  / __ \___  ____  ____/ /__  _____/ __ \_________ _____  ____ _  #
+    #   / / / / / /_/ / _ \/ __ \/ __  / _ \/ ___/ / / / ___/ __ `/ __ \/ __ `/  #
+    #  / /_/ / / _, _/  __/ / / / /_/ /  __/ /  / /_/ / /  / /_/ / / / / /_/ /   #
+    #  \___\_\/_/ |_|\___/_/ /_/\__,_/\___/_/   \____/_/   \__,_/_/ /_/\__, /    #
+    #                                                                 /____/     #
+    #                                                                            #
+    #                                                                            #
+    #  (c) 2009 - Carlo Casta <carlo.casta@gmail.com>                            #
+    #                                                                            #
+    ##############################################################################
 
-TODO list
+## TODO list: ##
+
+* more default meshes (sphere, pyramid, torus, teapot, ...)
+
+* import custom mesh (at least obj, dae, fbx formats)
+
+* switch to modern OpenGL pipeline
+
+    * let the user choose between OGL version
+
+* multiple pass shader support
+
+* render to texture support
+
+* add skycube / skysphere
+
+    * load custom background
+
+* save / reload workspace (project file)
