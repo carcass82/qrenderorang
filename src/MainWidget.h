@@ -30,9 +30,36 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QTreeWidgetItem>
+#include <QSyntaxHighlighter>
 #include <QDate>
 #include "PreviewWidget.h"
 #include "ui_qrenderorang.h"
+
+class GLSLSynHlighter : public QSyntaxHighlighter
+{
+public:
+    GLSLSynHlighter(QTextDocument *parent = 0);
+
+protected:
+    void highlightBlock(const QString &text);
+
+private:
+    struct HighlightingRule
+    {
+        QRegExp pattern;
+        QTextCharFormat format;
+    };
+    QVector<HighlightingRule> highlightingRules;
+
+    QTextCharFormat kwordsFormat;
+    QTextCharFormat builtinsFormat;
+    QTextCharFormat functionFormat;
+    QTextCharFormat singleLineCommentFormat;
+    QTextCharFormat multiLineCommentFormat;
+
+    QRegExp commentStartExpression;
+    QRegExp commentEndExpression;
+};
 
 class MainWidget : public QMainWindow
 {
@@ -40,7 +67,7 @@ class MainWidget : public QMainWindow
 
 public:
 	MainWidget(QWidget *parent = 0);
-	~MainWidget() {}
+    ~MainWidget();
 	void logMessage(const QString&);
 
 public slots:
@@ -56,7 +83,9 @@ private:
 
 	QString fileProjectName;
 	Ui::QRenderOrangGUI ui;
-    QTextEdit *m_textVert;
-    QTextEdit *m_textFrag;
-	PreviewWidget *glOutput;
+    QTextEdit* m_textVert;
+    QTextEdit* m_textFrag;
+	PreviewWidget* glOutput;
+    GLSLSynHlighter* m_textVertHL;
+    GLSLSynHlighter* m_textFragHL;
 };
