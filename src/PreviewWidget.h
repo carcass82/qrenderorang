@@ -57,12 +57,13 @@ protected:
     void wheelEvent(QWheelEvent*);
 
 private:
+    void DrawSkybox(uint32_t size, const glm::vec3& center);
+
     float m_alpha;
     float m_beta;
     float m_x, m_y, m_z;
     Qt::MouseButton m_button;
     QPoint m_pos;
-
     Shader* m_Shader;
     QList<Mesh*> m_Meshes;
     bool m_Initialized;

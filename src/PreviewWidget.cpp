@@ -91,23 +91,43 @@ void PreviewWidget::paintGL()
 
     //gluLookAt(m_x, m_y, m_z, m_x, m_y, m_z - 1, 0, 1, 0);
     glm::vec3 eye(m_x, m_y, m_z);
-    glm::vec3 center(m_x, m_y, m_z - 1);
+    glm::vec3 center(m_x, m_y, m_z - 1.0f);
     glm::vec3 up(0.0f, 1.0f, 0.0f);
     glm::mat4 mv = glm::lookAt(eye, center, up);
     glLoadMatrixf(glm::value_ptr(mv));
 
-    glRotatef(m_beta, 1, 0, 0);
-    glRotatef(m_alpha, 0, 1, 0);
+    glRotatef(m_beta, 1.0f, 0.0f, 0.0f);
+    glRotatef(m_alpha, 0.0f, 1.0f, 0.0f);
 
     if (m_Shader != NULL && m_Shader->isUsable())
     {
         for (int i = 0; i < m_Shader->passCount(); ++i)
         {
-            m_Shader->render(i);
+            m_Shader->startPass(i);
             m_Meshes.at(0)->Draw();
-            m_Shader->disable();
+            m_Shader->endPass();
         }
     }
+
+    DrawSkybox(100.0f, center);
+}
+
+void PreviewWidget::DrawSkybox(uint32_t size, const glm::vec3& center)
+{
+    const uint32_t hSize = size / 2.0f;
+
+    glPushMatrix();
+    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
+    glDisable(GL_LIGHTING);
+    glColor3f(1.0f, 1.0f, 1.0f);
+
+
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glEnable(GL_LIGHTING);
+    glPopMatrix();
 }
 
 void PreviewWidget::mousePressEvent(QMouseEvent* e)
@@ -121,8 +141,8 @@ void PreviewWidget::mouseMoveEvent(QMouseEvent* e)
     QPoint pos = e->pos();
     if (m_button == Qt::LeftButton)
     {
-        m_alpha += (240.0f * (pos - m_pos).x()) / height();
-        m_beta += (240.0f * (pos - m_pos).y()) / height();
+        m_alpha += (240.0f * (pos - m_pos).x()) / glm::min(static_cast<float>(height()), 0.1f);
+        m_beta += (240.0f * (pos - m_pos).y()) / glm::min(static_cast<float>(height()), 0.1f);
 
         if (m_beta < -90)
             m_beta = -90;

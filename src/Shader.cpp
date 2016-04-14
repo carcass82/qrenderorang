@@ -37,7 +37,7 @@ Shader::~Shader()
     glDeleteProgram(m_shaderProgram);
 }
 
-void Shader::render(int pass)
+void Shader::startPass(int pass)
 {
     Q_UNUSED(pass);
 
@@ -47,7 +47,7 @@ void Shader::render(int pass)
     }
 }
 
-void Shader::disable()
+void Shader::endPass()
 {
     glUseProgram(0);
 }

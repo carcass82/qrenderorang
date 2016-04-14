@@ -34,8 +34,8 @@ class Shader
 public:
     Shader();
     virtual ~Shader();
-    void render(int pass);
-    void disable();
+    void startPass(int pass);
+    void endPass();
     int passCount();
     bool isUsable();
     void compileAndLink();
