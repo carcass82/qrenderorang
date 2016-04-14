@@ -25,6 +25,10 @@ MOC_DIR      = build/moc
 RCC_DIR      = build/rc
 DESTDIR      = bin
 
-CONFIG += c++11
+CONFIG      += c++11
 
-LIBS += -lGLEW
+!win32:LIBS        += -lGLEW
+win32:!contains(QMAKE_HOST.arch, x86_64):LIBS += $$PWD/../SharedLibs/GLEW/lib/Release/Win32/glew32.lib
+win32:contains(QMAKE_HOST.arch, x86_64):LIBS  += $$PWD/../SharedLibs/GLEW/lib/Release/x64/glew32.lib
+win32:INCLUDEPATH += $$PWD/../SharedLibs/GLEW/include
+win32:INCLUDEPATH += $$PWD/../SharedLibs/
