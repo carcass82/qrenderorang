@@ -27,9 +27,9 @@ MainWidget::MainWidget(QWidget* parent)
 	: QMainWindow(parent)
     , m_textVert(nullptr)
     , m_textFrag(nullptr)
+    , glOutput(nullptr)
     , m_textVertHL(nullptr)
     , m_textFragHL(nullptr)
-    , glOutput(nullptr)
 {
 	ui.setupUi(this);
 
@@ -87,7 +87,7 @@ void MainWidget::loadFile()
 
 void MainWidget::loadDefaultShader()
 {
-	static QString phongVert =
+    static const QString phongVert =
 	"// (C) Clockworkcoders Tutorials\n"
 	"// http://www.opengl.org/sdk/docs/tutorials/ClockworkCoders/lighting.php\n\n"
 	"varying vec3 N;\n"
@@ -99,7 +99,7 @@ void MainWidget::loadDefaultShader()
 	"\tgl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\n"
 	"}";
 
-	static QString phongFrag =
+    static const QString phongFrag =
 	"// (C) Clockworkcoders Tutorials\n"
 	"// http://www.opengl.org/sdk/docs/tutorials/ClockworkCoders/lighting.php\n\n"
 	"varying vec3 N;\n"
@@ -197,7 +197,7 @@ void MainWidget::about()
 {
 	QMessageBox::about(this,
 					   tr("About QRenderOrang..."),
-					   tr("<h2>QRenderOrang SVN [dev only release]</h2>"
+                       tr("<h2>QRenderOrang [dev only release]</h2>"
 						  "<p>QRenderOrang is a multiplatform IDE for GLSL "
 						  "shader authoring inspired by AMD RenderMonkey"
 						  "&trade;</p>"

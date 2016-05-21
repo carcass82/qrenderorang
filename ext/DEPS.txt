@@ -1,0 +1,11 @@
+this directory should contain required dependencies for QRenderOrang:
+
+* GLEW (http://glew.sourceforge.net/)
++ glew/glew.cpp
++ glew/include/GL/glew.h
+
+* GLM (http://glm.g-truc.net)
++ glm/glm.hpp
++ glm/detail/...
++ glm/gtc/... 
++ glm/gtx/...

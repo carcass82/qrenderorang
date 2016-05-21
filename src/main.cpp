@@ -21,7 +21,8 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA             *
  *                                                                          *
  ****************************************************************************/
-#include <GL/glew.h>
+#include "GL/glew.h"
+
 #include <QtGui>
 #include <QApplication>
 #include <QtWidgets>

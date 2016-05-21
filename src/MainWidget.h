@@ -24,8 +24,6 @@
 
 #pragma once
 
-#include <GL/glew.h>
-
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QFileDialog>

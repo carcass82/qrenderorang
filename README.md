@@ -14,6 +14,8 @@
 
 ## REQUIREMENTS: ##
 * Qt 5 [ http://www.qt.io ]
+* GLM [http://glm.g-truc.net]
+* GLEW [http://glew.sourceforge.net]
 
 ## QUICK BUILDING: ##
 * cd into the project source directory

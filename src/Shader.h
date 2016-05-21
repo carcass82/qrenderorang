@@ -23,11 +23,11 @@
  ****************************************************************************/
 #pragma once
 
-#include <GL/glew.h>
-
 #include <QVector>
 #include <QList>
 #include <QString>
+
+#include "GL/glew.h"
 
 class Shader
 {

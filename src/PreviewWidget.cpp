@@ -75,7 +75,6 @@ void PreviewWidget::resizeGL(int width, int height)
 
     glMatrixMode(GL_PROJECTION);
 
-    //gluPerspective(45.0f, (GLfloat)width / (GLfloat)height, 0.01f, 1000.0f);
     height = std::max(1, height);
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)height, 0.1f, 1000.f);
     glLoadMatrixf(glm::value_ptr(projection));
@@ -89,7 +88,6 @@ void PreviewWidget::paintGL()
 
     glMatrixMode(GL_MODELVIEW);
 
-    //gluLookAt(m_x, m_y, m_z, m_x, m_y, m_z - 1, 0, 1, 0);
     glm::vec3 eye(m_x, m_y, m_z);
     glm::vec3 center(m_x, m_y, m_z - 1.0f);
     glm::vec3 up(0.0f, 1.0f, 0.0f);
@@ -112,22 +110,9 @@ void PreviewWidget::paintGL()
     DrawSkybox(100.0f, center);
 }
 
-void PreviewWidget::DrawSkybox(uint32_t size, const glm::vec3& center)
+void PreviewWidget::DrawSkybox(uint32_t /* size */, const glm::vec3& /* center */)
 {
-    const uint32_t hSize = size / 2.0f;
-
-    glPushMatrix();
-    glDisable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-    glDisable(GL_LIGHTING);
-    glColor3f(1.0f, 1.0f, 1.0f);
-
-
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_TRUE);
-    glEnable(GL_LIGHTING);
-    glPopMatrix();
+    // TODO: implement me
 }
 
 void PreviewWidget::mousePressEvent(QMouseEvent* e)
