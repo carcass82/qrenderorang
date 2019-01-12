@@ -27,8 +27,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tinyobj/tiny_obj_loader.h"
 
+#include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
-#include <glm/detail/func_geometric.hpp>
 using glm::vec3;
 using glm::vec2;
 
