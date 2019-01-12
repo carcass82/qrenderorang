@@ -12,15 +12,25 @@
     #                                                                            #
     ##############################################################################
 
+A toy IDE for GLSL shader authoring inspired by [AMD RenderMonkey](https://gpuopen.com/archive/gamescgi/rendermonkey-toolsuite/).
+
+![screen](doc/screen-01.jpg)
+
+
 ## REQUIREMENTS: ##
 * Qt 5 [ http://www.qt.io ]
 * GLM [http://glm.g-truc.net]
 * GLEW [http://glew.sourceforge.net]
+* tinyobjloader [https://github.com/syoyo/tinyobjloader]
+
+(see ext/DEPS.txt for details)
+
 
 ## QUICK BUILDING: ##
 * cd into the project source directory
 * $ qmake
 * $ make
+
 
 ## RUNNING: ##
 * QRenderOrang executable should be inside bin/ directory

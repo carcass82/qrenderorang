@@ -23,33 +23,37 @@
  ****************************************************************************/
 
 #include "PreviewWidget.h"
+#include <glm/gtc/type_ptr.hpp>
 
 PreviewWidget::PreviewWidget(QWidget* parent)
     : QGLWidget(parent)
-    , m_alpha(0.0)
-    , m_beta(0.0)
-    , m_x(0.0)
-    , m_y(0.0)
-    , m_z(5.0)
-    , m_Shader(nullptr)
+    , m_CameraPos(.0f, .0f, 2.f)
     , m_Initialized(false)
+    , m_Wireframe(false)
+{
+}
+
+PreviewWidget::PreviewWidget(QGLFormat format, QWidget* parent)
+    : QGLWidget(format, parent)
+    , m_CameraPos(.0f, .0f, 2.f)
+    , m_Initialized(false)
+    , m_Wireframe(false)
 {
 }
 
 PreviewWidget::~PreviewWidget()
 {
-    for (Mesh* m : m_Meshes)
-    {
-        delete m;
-        m = nullptr;
-    }
-    m_Meshes.clear();
+    delete m_Mesh;
+    m_Mesh = nullptr;
+}
 
-    if (m_Shader)
-    {
-        delete m_Shader;
-        m_Shader = nullptr;
-    }
+void PreviewWidget::updateCamera()
+{
+    glm::vec3 eye = m_CameraPos;
+    glm::vec3 center(.0f, .0f, .0f);
+    glm::vec3 up(.0f, 1.f, .0f);
+
+    m_ModelView = glm::lookAt(eye, center, up);
 }
 
 void PreviewWidget::initializeGL()
@@ -64,9 +68,10 @@ void PreviewWidget::initializeGL()
     glewExperimental = GL_TRUE;
     m_Initialized = (glewInit() == GLEW_OK);
 
-    Mesh* quad = new Mesh();
-    quad->Load("/random/path");
-    m_Meshes.append(quad);
+    m_Mesh = new Mesh();
+    m_Mesh->Load(Mesh::SPHERE);
+
+    updateCamera();
 }
 
 void PreviewWidget::resizeGL(int width, int height)
@@ -75,44 +80,32 @@ void PreviewWidget::resizeGL(int width, int height)
 
     glMatrixMode(GL_PROJECTION);
 
-    height = std::max(1, height);
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)height, 0.1f, 1000.f);
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)glm::max(1, height), 0.1f, 1000.f);
     glLoadMatrixf(glm::value_ptr(projection));
-
-    glMatrixMode(GL_MODELVIEW);
 }
 
 void PreviewWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    glMatrixMode(GL_MODELVIEW);
-
-    glm::vec3 eye(m_x, m_y, m_z);
-    glm::vec3 center(m_x, m_y, m_z - 1.0f);
-    glm::vec3 up(0.0f, 1.0f, 0.0f);
-    glm::mat4 mv = glm::lookAt(eye, center, up);
-    glLoadMatrixf(glm::value_ptr(mv));
-
-    glRotatef(m_beta, 1.0f, 0.0f, 0.0f);
-    glRotatef(m_alpha, 0.0f, 1.0f, 0.0f);
-
-    if (m_Shader != NULL && m_Shader->isUsable())
+    if (m_Mesh)
     {
-        for (int i = 0; i < m_Shader->passCount(); ++i)
-        {
-            m_Shader->startPass(i);
-            m_Meshes.at(0)->Draw();
-            m_Shader->endPass();
-        }
+
+        glPolygonMode(GL_FRONT_AND_BACK, m_Wireframe ? GL_LINE : GL_FILL);
+
+        glMatrixMode(GL_MODELVIEW);
+
+        glm::vec3 tocenter = -m_Mesh->center();
+        float normalizefactor = 1.f / glm::max(m_Mesh->size().x, glm::max(m_Mesh->size().y, m_Mesh->size().z));
+
+        glLoadMatrixf(glm::value_ptr(m_ModelView));
+        glRotatef(m_delta.y(), 1.0f, 0.0f, 0.0f);
+        glRotatef(m_delta.x(), 0.0f, 1.0f, 0.0f);
+        glScalef(normalizefactor, normalizefactor, normalizefactor);
+        glTranslatef(tocenter.x, tocenter.y, tocenter.z);
+
+        m_Mesh->Draw();
     }
-
-    DrawSkybox(100.0f, center);
-}
-
-void PreviewWidget::DrawSkybox(uint32_t /* size */, const glm::vec3& /* center */)
-{
-    // TODO: implement me
 }
 
 void PreviewWidget::mousePressEvent(QMouseEvent* e)
@@ -126,16 +119,9 @@ void PreviewWidget::mouseMoveEvent(QMouseEvent* e)
     QPoint pos = e->pos();
     if (m_button == Qt::LeftButton)
     {
-        m_alpha += (240.0f * (pos - m_pos).x()) / glm::min(static_cast<float>(height()), 0.1f);
-        m_beta += (240.0f * (pos - m_pos).y()) / glm::min(static_cast<float>(height()), 0.1f);
-
-        if (m_beta < -90)
-            m_beta = -90;
-        else if (m_beta > 90)
-            m_beta = 90;
+        m_delta += (pos - m_pos);
     }
-
-    m_pos = pos;
+    m_pos = pos; 
     updateGL();
 }
 
@@ -147,6 +133,7 @@ void PreviewWidget::mouseReleaseEvent(QMouseEvent* e)
 
 void PreviewWidget::wheelEvent(QWheelEvent* e)
 {
-    m_z += (m_z * e->delta() / 120.0f) / 20.0f;
+    m_CameraPos.z -= (m_CameraPos.z * e->delta() / 120.0f) / 20.0f;
+    updateCamera();
     updateGL();
 }

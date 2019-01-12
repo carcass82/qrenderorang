@@ -23,8 +23,7 @@
  ****************************************************************************/
 
 #pragma once
-
-#define GLM_FORCE_RADIANS
+#include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -43,9 +42,13 @@ class PreviewWidget : public QGLWidget
 {
 public:
     PreviewWidget(QWidget *parent = 0);
+    PreviewWidget(QGLFormat format, QWidget* parent = 0);
     ~PreviewWidget();
-    bool isInitialized() { return m_Initialized; }
-    void setShader(Shader *s) { m_Shader = s; }
+    bool isInitialized() const;
+    bool wireframe() const;
+    void ToggleWireframe();
+    Mesh* mesh() const;
+    void SetMesh(Mesh* mesh);
 
 protected:
     void initializeGL();
@@ -57,14 +60,45 @@ protected:
     void wheelEvent(QWheelEvent*);
 
 private:
-    void DrawSkybox(uint32_t size, const glm::vec3& center);
+    void updateCamera();
 
-    float m_alpha;
-    float m_beta;
-    float m_x, m_y, m_z;
+    glm::vec3 m_CameraPos;
     Qt::MouseButton m_button;
     QPoint m_pos;
-    Shader* m_Shader;
-    QList<Mesh*> m_Meshes;
+    QPoint m_delta;
+    Mesh* m_Mesh;
+    glm::mat4 m_ModelView;
     bool m_Initialized;
+    bool m_Wireframe;
 };
+
+
+inline bool PreviewWidget::isInitialized() const
+{
+    return m_Initialized;
+}
+
+inline Mesh* PreviewWidget::mesh() const
+{
+    return m_Mesh;
+}
+
+inline void PreviewWidget::SetMesh(Mesh* mesh)
+{
+    delete m_Mesh;
+    m_Mesh = mesh;
+
+    updateCamera();
+    updateGL();
+}
+
+inline void PreviewWidget::ToggleWireframe()
+{
+    m_Wireframe = !m_Wireframe;
+    updateGL();
+}
+
+inline bool PreviewWidget::wireframe() const
+{
+    return m_Wireframe;
+}

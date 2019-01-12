@@ -73,6 +73,9 @@ public slots:
 	void loadFile();
 	void about();
 	void compileShader();
+    void selectMesh(Mesh::MeshType type);
+    void toggleWireframeView();
+    void loadMesh();
 
 private:
 	void setupActions();

@@ -21,104 +21,58 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA             *
  *                                                                          *
  ****************************************************************************/
-
 #pragma once
+#include <glm/vec4.hpp>
 
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
+#include "Shader.h"
 
-#include <QString>
-#include <QVector>
-
-#include "GL/glew.h"
-
-#include "Material.h"
-
-class Mesh
+class Material
 {
 public:
-    enum MeshType { CUBE, SPHERE };
-
-    Mesh();
-    ~Mesh();
- 	void Draw();
-    void Load(MeshType Shape);
-    void Load(const QString& filePath);
-
-    Material* GetMaterial() const;
-    void SetMaterial(Material* material);
-
-    size_t numVertices() const;
-    size_t numIndices() const;
-    const glm::vec3& center() const;
-    const glm::vec3& size() const;
-
-    static QString TypeToString(Mesh::MeshType type);
-
-private:
-    void ComputeNormals();
-    void ComputeBoundingBox();
-    void ComputeTangentsAndBitangents();
-    void SetupBuffers();
-
-    GLuint m_VBuffer;
-    GLuint m_IBuffer;
-
-    struct Vertex
+    struct MaterialProperties
     {
-        glm::vec3 pos;
-        glm::vec3 normal;
-        glm::vec2 uv0;
-        glm::vec3 tangent;
-        glm::vec3 bitangent;
+        glm::vec4 ambient;
+        glm::vec4 diffuse;
+        glm::vec4 specular;
+        glm::vec4 emission;
+        float shininess;
     };
 
-    glm::vec3 m_MeshCenter;
-    glm::vec3 m_MeshSize;
-    QVector<Vertex> m_Vertices;
-    QVector<uint32_t> m_Indices;
-    Material* m_Material = nullptr;
+    Material();
+    ~Material();
+
+    uint32_t passCount() const;
+    void BeginDraw(int pass = 0);
+    void EndDraw();
+
+    void SetShader(Shader* shader, int pass = 0);
+    void SetMaterialProperties(const MaterialProperties& properties);
+
+private:
+    int m_currentPass = 0;
+    MaterialProperties m_Props;
+    QVector<Shader*> m_Shaders;
 };
 
-
-inline Material* Mesh::GetMaterial() const
+inline uint32_t Material::passCount() const
 {
-    return m_Material;
+    return m_Shaders.size();
 }
 
-inline void Mesh::SetMaterial(Material* material)
+inline void Material::SetMaterialProperties(const MaterialProperties& properties)
 {
-    delete m_Material;
-    m_Material = material;
+    m_Props = properties;
 }
 
-inline size_t Mesh::numVertices() const
+inline void Material::SetShader(Shader* shader, int pass)
 {
-    return m_Vertices.size();
-}
-
-inline size_t Mesh::numIndices() const
-{
-    return m_Indices.size();
-}
-
-inline const glm::vec3& Mesh::center() const
-{
-    return m_MeshCenter;
-}
-
-inline const glm::vec3& Mesh::size() const
-{
-    return m_MeshSize;
-}
-
-inline QString Mesh::TypeToString(Mesh::MeshType type)
-{
-    switch (type)
+    if (m_Shaders.empty())
     {
-    case MeshType::CUBE:   return "Cube (builtin)";
-    case MeshType::SPHERE: return "Sphere (builtin)";
+        m_Shaders.push_back(shader);
     }
-
-    return "";
+    else if (pass < m_Shaders.size())
+    {
+        delete m_Shaders[pass];
+        m_Shaders[pass] = shader;
+    }
 }

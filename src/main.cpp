@@ -37,7 +37,7 @@ int main(int argc, char** argv)
 	splash.show();
 
 	MainWidget w;
-	w.show();
+	w.showMaximized();
 
 	splash.finish(&w);
 

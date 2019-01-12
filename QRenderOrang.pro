@@ -7,13 +7,15 @@ QT                 += core gui widgets opengl
 HEADERS            += src/MainWidget.h         \
                       src/PreviewWidget.h      \
                       src/Shader.h             \
-                      src/Mesh.h
+                      src/Mesh.h               \
+					  src/Material.h
 
 
 SOURCES            += src/MainWidget.cpp       \
                       src/PreviewWidget.cpp    \
                       src/Shader.cpp           \
                       src/Mesh.cpp             \
+					  src/Material.cpp         \
                       src/main.cpp
 
 FORMS              += src/qrenderorang.ui
@@ -27,7 +29,7 @@ DESTDIR             = bin
 
 CONFIG             += c++11
 
-win32-msvc*:LIBS   += -lOpenGL32.lib
+win32-msvc*:LIBS   += -lOpenGL32
 win32-g++:LIBS     += -lopengl32
 !win32:LIBS        += -lGL
 

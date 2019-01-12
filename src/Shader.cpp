@@ -25,9 +25,7 @@
 #include "Shader.h"
 
 Shader::Shader()
-    : m_totPasses(0)
-    , m_curPass(0)
-    , m_usable(false)
+    : m_usable(false)
 {
     m_shaderProgram = glCreateProgram();
 }
@@ -37,17 +35,15 @@ Shader::~Shader()
     glDeleteProgram(m_shaderProgram);
 }
 
-void Shader::startPass(int pass)
+void Shader::start()
 {
-    Q_UNUSED(pass);
-
     if (m_usable)
     {
         glUseProgram(m_shaderProgram);
     }
 }
 
-void Shader::endPass()
+void Shader::stop()
 {
     glUseProgram(0);
 }
@@ -91,10 +87,6 @@ void Shader::compileAndLink()
     if (CheckError(m_shaderProgram, GL_LINK_STATUS))
     {
         m_compileLog = "OK";
-
-        // shader link successful. update uniform locations
-        // and load textures
-        m_totPasses = 1;
         m_usable = true;
     }
 

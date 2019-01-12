@@ -70,7 +70,11 @@ void MainWidget::logMessage(const QString& msg)
 
 void MainWidget::setupGLPreview()
 {
-	glOutput = new PreviewWidget(0);
+    QGLFormat glFormat;
+    glFormat.setVersion(3, 3);
+    glFormat.setProfile(QGLFormat::CompatibilityProfile);
+    
+	glOutput = new PreviewWidget(glFormat);
 	ui.frameGLPreview->setLayout(new QGridLayout());
 	((QGridLayout*)ui.frameGLPreview->layout())->addWidget(glOutput);
 }
@@ -82,7 +86,7 @@ void MainWidget::loadFile()
                                                    QDir::currentPath(),
                                                    tr("QRenderOrang Project (*.qrfx)"));
 
-    // TODO: add support for loading project files
+    // TODO: add support for project files
 }
 
 void MainWidget::loadDefaultShader()
@@ -134,11 +138,22 @@ void MainWidget::compileShader()
     {
         Shader* s = new Shader();
         s->setSource(m_textVert->toPlainText(), m_textFrag->toPlainText());
-		glOutput->setShader(s);
-		s->compileAndLink();
+        s->compileAndLink();
+
+        Material::MaterialProperties mp;
+        {
+            //mp.ambient = ...
+        }
+
+        Material* m = new Material();
+        //m->SetMaterialProperties(mp);
+        m->SetShader(s);
+
+        glOutput->mesh()->SetMaterial(m);
+
 		glOutput->updateGL();
 
-		logMessage("Compiling... " + s->compilationLog());
+		logMessage("Compiling... " + s->compileLog());
     }
     else
     {
@@ -151,10 +166,62 @@ void MainWidget::setupActions()
 	// Menu
     connect(ui.action_Open,       SIGNAL(triggered()), this, SLOT(loadFile()));
     connect(ui.action_Quit,       SIGNAL(triggered()), this, SLOT(close()));
+    connect(ui.action_LoadSample, SIGNAL(triggered()), this, SLOT(loadDefaultShader()));
     connect(ui.action_Compile,    SIGNAL(triggered()), this, SLOT(compileShader()));
     connect(ui.action_Qt,         SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     connect(ui.action_QRO,        SIGNAL(triggered()), this, SLOT(about()));
-	connect(ui.action_LoadSample, SIGNAL(triggered()), this, SLOT(loadDefaultShader()));
+
+    connect(ui.actionSphere,      &QAction::triggered, this, [this] { selectMesh(Mesh::SPHERE); });
+    connect(ui.actionCube,        &QAction::triggered, this, [this] { selectMesh(Mesh::CUBE);   });
+    connect(ui.actionImport,      SIGNAL(triggered()), this, SLOT(loadMesh()));
+
+    connect(ui.actionWireframe,   SIGNAL(triggered()), this, SLOT(toggleWireframeView()));
+}
+
+void MainWidget::selectMesh(Mesh::MeshType type)
+{
+    if (glOutput)
+    {
+        Mesh* builtin = new Mesh();
+        builtin->Load(type);
+
+        glOutput->SetMesh(builtin);
+
+        ui.statusbar->showMessage(QString("%1 - %2 V / %3 F").arg(
+            Mesh::TypeToString(type),
+            QString::number(builtin->numVertices()),
+            QString::number(builtin->numIndices())));
+    }
+}
+
+void MainWidget::loadMesh()
+{
+    QString meshFile = QFileDialog::getOpenFileName(this,
+                                                    tr("Load Mesh"),
+                                                    QDir::currentPath(),
+                                                    tr("Wavefront OBJ (*.obj)"));
+
+    if (!meshFile.isEmpty() && glOutput)
+    {
+        Mesh* custom = new Mesh();
+        custom->Load(meshFile);
+
+        glOutput->SetMesh(custom);
+
+        ui.statusbar->showMessage(QString("%1 - %2 V / %3 F").arg(
+            QFileInfo(meshFile).fileName(),
+            QString::number(custom->numVertices()),
+            QString::number(custom->numIndices())));
+    }
+}
+
+void MainWidget::toggleWireframeView()
+{
+    if (glOutput)
+    {
+        glOutput->ToggleWireframe();
+        ui.actionWireframe->setChecked(glOutput->wireframe());
+    }
 }
 
 void MainWidget::setupEditor()
@@ -165,23 +232,19 @@ void MainWidget::setupEditor()
     m_textVert->setAcceptRichText(true);
     m_textFrag->setAcceptRichText(true);
 
-    m_textVert->setWindowTitle("untitled.vert [*]");
-    m_textFrag->setWindowTitle("untitled.frag [*]");
+    m_textVert->setWordWrapMode(QTextOption::WrapMode::NoWrap);
+    m_textFrag->setWordWrapMode(QTextOption::WrapMode::NoWrap);
 
-    /*
-	m_textVert->addPanel("Line Number Panel", QCodeEdit::West, true)
-			  ->setShortcut(QKeySequence("F11"));
+    m_textVert->setWindowTitle("untitled.vert");
+    m_textFrag->setWindowTitle("untitled.frag");
 
-	m_textFrag->addPanel("Line Number Panel", QCodeEdit::West, true)
-              ->setShortcut(QKeySequence("F11"));
-    */
-
-    QFont fixedfont;
-    fixedfont.setFamily("Consolas");
-    fixedfont.setFixedPitch(true);
-    fixedfont.setPointSize(10);
+    const QFont fixedfont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     m_textVert->setFont(fixedfont);
     m_textFrag->setFont(fixedfont);
+
+    QFontMetrics metrics(fixedfont);
+    m_textVert->setTabStopWidth(4 * metrics.width(' '));
+    m_textFrag->setTabStopWidth(4 * metrics.width(' '));
 
     m_textVertHL = new GLSLSynHlighter(m_textVert->document());
     m_textFragHL = new GLSLSynHlighter(m_textFrag->document());

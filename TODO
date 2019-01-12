@@ -14,15 +14,11 @@
 
 ## TODO list: ##
 
-* more default meshes (sphere, pyramid, torus, teapot, ...)
-
-* import custom mesh (at least obj, dae, fbx formats)
-
 * switch to modern OpenGL pipeline
 
     * let the user choose between OGL version
 
-* multiple pass shader support
+* "multipass" shader support
 
 * render to texture support
 

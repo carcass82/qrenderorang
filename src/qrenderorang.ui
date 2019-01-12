@@ -16,7 +16,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>QRenderOrang SVN [dev only release] [*]</string>
+   <string>QRenderOrang</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -26,6 +26,9 @@
        <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,4,3">
         <item>
          <widget class="QTreeWidget" name="treeShaderStruct">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <attribute name="headerVisible">
            <bool>false</bool>
           </attribute>
@@ -104,7 +107,7 @@
      <x>0</x>
      <y>0</y>
      <width>682</width>
-     <height>26</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -123,8 +126,9 @@
     <property name="title">
      <string>&amp;Shader</string>
     </property>
-    <addaction name="action_Compile"/>
     <addaction name="action_LoadSample"/>
+    <addaction name="separator"/>
+    <addaction name="action_Compile"/>
    </widget>
    <widget class="QMenu" name="menuA_bout">
     <property name="title">
@@ -137,9 +141,19 @@
     <property name="title">
      <string>&amp;View</string>
     </property>
+    <widget class="QMenu" name="menuMesh">
+     <property name="title">
+      <string>Mesh</string>
+     </property>
+     <addaction name="actionCube"/>
+     <addaction name="actionSphere"/>
+     <addaction name="actionImport"/>
+    </widget>
     <addaction name="action_Preview"/>
     <addaction name="action_Messages"/>
+    <addaction name="actionWireframe"/>
     <addaction name="action_Fullscreen"/>
+    <addaction name="menuMesh"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_View"/>
@@ -159,26 +173,41 @@
    </attribute>
   </widget>
   <action name="action_New">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>&amp;New</string>
    </property>
   </action>
   <action name="action_Open">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>&amp;Open</string>
    </property>
   </action>
   <action name="action_Close">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>&amp;Close</string>
    </property>
   </action>
   <action name="action_Save">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>&amp;Save</string>
    </property>
   </action>
   <action name="actionSave_As">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Save &amp;As...</string>
    </property>
@@ -213,6 +242,9 @@
    <property name="checked">
     <bool>true</bool>
    </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>&amp;Preview</string>
    </property>
@@ -223,6 +255,9 @@
    </property>
    <property name="checked">
     <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
    </property>
    <property name="text">
     <string>&amp;Messages</string>
@@ -241,7 +276,30 @@
   </action>
   <action name="action_LoadSample">
    <property name="text">
-    <string>&amp;Load Sample Shader</string>
+    <string>&amp;Per Fragment Phong</string>
+   </property>
+  </action>
+  <action name="actionCube">
+   <property name="text">
+    <string>Cube</string>
+   </property>
+  </action>
+  <action name="actionSphere">
+   <property name="text">
+    <string>Sphere</string>
+   </property>
+  </action>
+  <action name="actionWireframe">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Wireframe</string>
+   </property>
+  </action>
+  <action name="actionImport">
+   <property name="text">
+    <string>Import</string>
    </property>
   </action>
  </widget>

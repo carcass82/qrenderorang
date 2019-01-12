@@ -34,20 +34,17 @@ class Shader
 public:
     Shader();
     virtual ~Shader();
-    void startPass(int pass);
-    void endPass();
-    int passCount();
-    bool isUsable();
+    void start();
+    void stop();
+    bool isUsable() const;
     void compileAndLink();
     void setSource(const QString& v, const QString& f);
-    const QString& compilationLog();
+    const QString& compileLog();
 
 private:
     bool CheckError(GLuint obj, GLuint check);
     void FillInfoLog(GLuint obj);
 
-    int m_totPasses;
-    int m_curPass;
     bool m_usable;
     QString m_vertSource;
     QString m_fragSource;
@@ -56,12 +53,7 @@ private:
     bool m_shaderLinked;
 };
 
-inline int Shader::passCount()
-{
-    return m_totPasses;
-}
-
-inline bool Shader::isUsable()
+inline bool Shader::isUsable() const
 {
     return m_usable;
 }
@@ -72,7 +64,7 @@ inline void Shader::setSource(const QString &v, const QString &f)
     m_fragSource = f;
 }
 
-inline const QString& Shader::compilationLog()
+inline const QString& Shader::compileLog()
 {
     return m_compileLog;
 }
