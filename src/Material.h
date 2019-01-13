@@ -22,19 +22,20 @@
  *                                                                          *
  ****************************************************************************/
 #pragma once
-#include <glm/vec4.hpp>
-
 #include "Shader.h"
+
+#include "cclib/cclib.h"
+using cc::math::vec4;
 
 class Material
 {
 public:
     struct MaterialProperties
     {
-        glm::vec4 ambient;
-        glm::vec4 diffuse;
-        glm::vec4 specular;
-        glm::vec4 emission;
+        vec4 ambient;
+        vec4 diffuse;
+        vec4 specular;
+        vec4 emission;
         float shininess;
     };
 

@@ -23,11 +23,6 @@
  ****************************************************************************/
 
 #pragma once
-#include <glm/vec3.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
 #include "GL/glew.h"
 
 #include <QGLWidget>
@@ -36,6 +31,10 @@
 
 #include "Mesh.h"
 #include "Shader.h"
+
+#include "cclib/cclib.h"
+using cc::math::vec3;
+using cc::math::mat4;
 
 
 class PreviewWidget : public QGLWidget
@@ -62,12 +61,12 @@ protected:
 private:
     void updateCamera();
 
-    glm::vec3 m_CameraPos;
+    vec3 m_CameraPos;
     Qt::MouseButton m_button;
     QPoint m_pos;
     QPoint m_delta;
     Mesh* m_Mesh;
-    glm::mat4 m_ModelView;
+    mat4 m_ModelView;
     bool m_Initialized;
     bool m_Wireframe;
 };

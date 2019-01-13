@@ -21,9 +21,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA             *
  *                                                                          *
  ****************************************************************************/
-
 #include "PreviewWidget.h"
-#include <glm/gtc/type_ptr.hpp>
+
+using cc::util::max;
+using cc::math::radians;
+using cc::math::perspective;
+using cc::math::lookAt;
 
 PreviewWidget::PreviewWidget(QWidget* parent)
     : QGLWidget(parent)
@@ -49,11 +52,11 @@ PreviewWidget::~PreviewWidget()
 
 void PreviewWidget::updateCamera()
 {
-    glm::vec3 eye = m_CameraPos;
-    glm::vec3 center(.0f, .0f, .0f);
-    glm::vec3 up(.0f, 1.f, .0f);
+    vec3 eye = m_CameraPos;
+    vec3 center(.0f, .0f, .0f);
+    vec3 up(.0f, 1.f, .0f);
 
-    m_ModelView = glm::lookAt(eye, center, up);
+    m_ModelView = lookAt(eye, center, up);
 }
 
 void PreviewWidget::initializeGL()
@@ -65,7 +68,15 @@ void PreviewWidget::initializeGL()
     glClearDepth(1.0f);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
-    glewExperimental = GL_TRUE;
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+
+    vec4 light_position{1., 1., 1., .0};
+    glLightfv(GL_LIGHT0, GL_POSITION, reinterpret_cast<float*>(&light_position));
+
+    glEnable(GL_COLOR_MATERIAL);
+
+    glewExperimental = true;
     m_Initialized = (glewInit() == GLEW_OK);
 
     m_Mesh = new Mesh();
@@ -80,8 +91,8 @@ void PreviewWidget::resizeGL(int width, int height)
 
     glMatrixMode(GL_PROJECTION);
 
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (GLfloat)width / (GLfloat)glm::max(1, height), 0.1f, 1000.f);
-    glLoadMatrixf(glm::value_ptr(projection));
+    mat4 projection = perspective(radians(45.0f), (GLfloat)width / (GLfloat)max(1, height), 0.1f, 1000.f);
+    glLoadMatrixf(reinterpret_cast<float*>(&projection));
 }
 
 void PreviewWidget::paintGL()
@@ -90,15 +101,14 @@ void PreviewWidget::paintGL()
 
     if (m_Mesh)
     {
-
         glPolygonMode(GL_FRONT_AND_BACK, m_Wireframe ? GL_LINE : GL_FILL);
 
         glMatrixMode(GL_MODELVIEW);
 
-        glm::vec3 tocenter = -m_Mesh->center();
-        float normalizefactor = 1.f / glm::max(m_Mesh->size().x, glm::max(m_Mesh->size().y, m_Mesh->size().z));
+        vec3 tocenter = -m_Mesh->center();
+        float normalizefactor = 1.f / max(m_Mesh->size().x, max(m_Mesh->size().y, m_Mesh->size().z));
 
-        glLoadMatrixf(glm::value_ptr(m_ModelView));
+        glLoadMatrixf(reinterpret_cast<float*>(&m_ModelView));
         glRotatef(m_delta.y(), 1.0f, 0.0f, 0.0f);
         glRotatef(m_delta.x(), 0.0f, 1.0f, 0.0f);
         glScalef(normalizefactor, normalizefactor, normalizefactor);

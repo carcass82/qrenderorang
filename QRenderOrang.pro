@@ -1,4 +1,4 @@
-CONFIG             *= qt debug
+CONFIG             *= c++17 qt debug_and_release
 
 TEMPLATE            = app
 TARGET              = QRenderOrang
@@ -26,8 +26,6 @@ UI_DIR              = build/ui
 MOC_DIR             = build/moc
 RCC_DIR             = build/rc
 DESTDIR             = bin
-
-CONFIG             += c++11
 
 win32-msvc*:LIBS   += -lOpenGL32
 win32-g++:LIBS     += -lopengl32

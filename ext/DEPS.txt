@@ -1,14 +1,8 @@
-this directory should contain required dependencies for QRenderOrang:
+this directory contains dependencies for QRenderOrang:
 
-* GLEW (http://glew.sourceforge.net/)
+* GLEW (http://glew.sourceforge.net - updated to GLEW 2.1.0)
 + glew/glew.cpp
 + glew/include/GL/glew.h
 
-* GLM (http://glm.g-truc.net)
-+ glm/glm.hpp
-+ glm/detail/...
-+ glm/gtc/... 
-+ glm/gtx/...
-
-* TinyOBJ (https://github.com/syoyo/tinyobjloader)
+* TinyOBJ (https://github.com/syoyo/tinyobjloader - f37fed32f3eb0912cc10a970f78774cd98598ef6@master)
 + tinyobj/tiny_obj_loader.h

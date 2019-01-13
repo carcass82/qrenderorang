@@ -27,10 +27,20 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tinyobj/tiny_obj_loader.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-using glm::vec3;
-using glm::vec2;
+using cc::util::min;
+using cc::util::max;
+using cc::math::PI;
+using cc::math::vec3;
+using cc::math::vec2;
+using cc::math::normalize;
+using cc::math::cross;
+
+namespace
+{
+    static inline constexpr vec3 min_componentwise(const vec3& a, const vec3& b) { return vec3(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)); }
+    static inline constexpr vec3 max_componentwise(const vec3& a, const vec3& b) { return vec3(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)); }
+}
+
 
 Mesh::Mesh()
     : m_Material(nullptr)
@@ -100,33 +110,33 @@ void Mesh::Load(MeshType Shape)
     case CUBE:
     {
         const vec3 front[] = {
-            { -1.0f, -1.0f, 1.0f },
-            { 1.0f, -1.0f, 1.0f },
-            { 1.0f,  1.0f, 1.0f },
-            { -1.0f, 1.0f, 1.0f }
+            vec3{ -1.0f, -1.0f, 1.0f },
+            vec3{ 1.0f, -1.0f, 1.0f },
+            vec3{ 1.0f,  1.0f, 1.0f },
+            vec3{ -1.0f, 1.0f, 1.0f }
         };
 
         const vec3 back[] = {
-            { -1.0f, -1.0f, -1.0f },
-            { -1.0f,  1.0f, -1.0f },
-            { 1.0f, 1.0f, -1.0f },
-            { 1.0f, -1.0f, -1.0f }
+            vec3{ -1.0f, -1.0f, -1.0f },
+            vec3{ -1.0f,  1.0f, -1.0f },
+            vec3{ 1.0f, 1.0f, -1.0f },
+            vec3{ 1.0f, -1.0f, -1.0f }
         };
 
         const vec2 uv[] = {
-            { 0.0f, 0.0f },
-            { 1.0f, 0.0f },
-            { 1.0f, 1.0f },
-            { 0.0f, 1.0f }
+            vec2{ 0.0f, 0.0f },
+            vec2{ 1.0f, 0.0f },
+            vec2{ 1.0f, 1.0f },
+            vec2{ 0.0f, 1.0f }
         };
 
         const vec3 normals[] = {
-            { 0.0f, 0.0f, 1.0f },    // front
-            { 0.0f, 0.0f, -1.0f },   // back
-            { 0.0f, 1.0f, 0.0f },    // top
-            { 0.0f, -1.0f, 0.0f },   // bottom
-            { 1.0f, 0.0f, 0.0f },    // right
-            { -1.0f, 0.0f, 0.0f }    // left
+            vec3{ 0.0f, 0.0f, 1.0f },    // front
+            vec3{ 0.0f, 0.0f, -1.0f },   // back
+            vec3{ 0.0f, 1.0f, 0.0f },    // top
+            vec3{ 0.0f, -1.0f, 0.0f },   // bottom
+            vec3{ 1.0f, 0.0f, 0.0f },    // right
+            vec3{ -1.0f, 0.0f, 0.0f }    // left
         };
         
         // front
@@ -190,15 +200,15 @@ void Mesh::Load(MeshType Shape)
         {
             float delta_theta1 = (float)lon / longitude;
             float delta_theta2 = (float)(lon + 1) / longitude;
-            float theta1 = delta_theta1 * glm::pi<float>();
-            float theta2 = delta_theta2 * glm::pi<float>();
+            float theta1 = delta_theta1 * PI;
+            float theta2 = delta_theta2 * PI;
 
             for (uint32_t lat = 0; lat < latitude; ++lat)
             {
                 float delta_phi1 = (float)lat / latitude;
                 float delta_phi2 = (float)(lat + 1) / latitude;
-                float phi1 = delta_phi1 * 2.f * glm::pi<float>();
-                float phi2 = delta_phi2 * 2.f * glm::pi<float>();
+                float phi1 = delta_phi1 * 2.f * PI;
+                float phi2 = delta_phi2 * 2.f * PI;
 
                 // phi2  phi1
                 //  |     |
@@ -309,21 +319,21 @@ void Mesh::Load(const QString& filePath)
             for (const tinyobj::index_t& index : shape.mesh.indices)
             {
                 const int voffset = 3 * index.vertex_index;
-                vec3 pos = { attrib.vertices[voffset], attrib.vertices[voffset + 1], attrib.vertices[voffset + 2] };
+                vec3 pos = vec3{ attrib.vertices[voffset], attrib.vertices[voffset + 1], attrib.vertices[voffset + 2] };
 
                 vec3 normal;
                 const int noffset = 3 * index.normal_index;
                 if (index.normal_index != -1)
                 {
                     recompute_normals = false;
-                    normal = { attrib.normals[noffset], attrib.normals[noffset + 1], attrib.normals[noffset + 2] };
+                    normal = vec3{ attrib.normals[noffset], attrib.normals[noffset + 1], attrib.normals[noffset + 2] };
                 }
 
                 vec2 uv;
                 const int uvoffset = 2 * index.texcoord_index;
                 if (index.texcoord_index != -1)
                 {
-                    uv = { attrib.texcoords[uvoffset], attrib.vertices[uvoffset + 1] };
+                    uv = vec2{ attrib.texcoords[uvoffset], attrib.vertices[uvoffset + 1] };
                 }
 
                 m_Vertices.push_back({ pos, normal, uv, vec3(.0), vec3(.0) });
@@ -350,7 +360,7 @@ void Mesh::ComputeNormals()
         auto& v2 = m_Vertices[m_Indices[i + 1]];
         auto& v3 = m_Vertices[m_Indices[i + 2]];
 
-        glm::vec3 normal = normalize(cross(v2.pos - v1.pos, v3.pos - v1.pos));
+        vec3 normal = normalize(cross(v2.pos - v1.pos, v3.pos - v1.pos));
         v1.normal = v2.normal = v3.normal = normal;
     }
 }
@@ -399,8 +409,8 @@ void Mesh::ComputeBoundingBox()
     vec3 vmax;
     for (auto vertex : m_Vertices)
     {
-        vmin = min(vmin, vertex.pos);
-        vmax = max(vmax, vertex.pos);
+        vmin = min_componentwise(vmin, vertex.pos);
+        vmax = max_componentwise(vmax, vertex.pos);
     }
 
     m_MeshCenter = vec3((vmax.x + vmin.x) / 2.f, (vmax.y + vmin.y) / 2.f, (vmax.z + vmin.z) / 2.f);

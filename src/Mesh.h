@@ -24,15 +24,16 @@
 
 #pragma once
 
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-
 #include <QString>
 #include <QVector>
 
 #include "GL/glew.h"
 
 #include "Material.h"
+
+#include "cclib/cclib.h"
+using cc::math::vec2;
+using cc::math::vec3;
 
 class Mesh
 {
@@ -50,8 +51,8 @@ public:
 
     size_t numVertices() const;
     size_t numIndices() const;
-    const glm::vec3& center() const;
-    const glm::vec3& size() const;
+    const vec3& center() const;
+    const vec3& size() const;
 
     static QString TypeToString(Mesh::MeshType type);
 
@@ -66,15 +67,15 @@ private:
 
     struct Vertex
     {
-        glm::vec3 pos;
-        glm::vec3 normal;
-        glm::vec2 uv0;
-        glm::vec3 tangent;
-        glm::vec3 bitangent;
+        vec3 pos;
+        vec3 normal;
+        vec2 uv0;
+        vec3 tangent;
+        vec3 bitangent;
     };
 
-    glm::vec3 m_MeshCenter;
-    glm::vec3 m_MeshSize;
+    vec3 m_MeshCenter;
+    vec3 m_MeshSize;
     QVector<Vertex> m_Vertices;
     QVector<uint32_t> m_Indices;
     Material* m_Material = nullptr;
@@ -102,12 +103,12 @@ inline size_t Mesh::numIndices() const
     return m_Indices.size();
 }
 
-inline const glm::vec3& Mesh::center() const
+inline const vec3& Mesh::center() const
 {
     return m_MeshCenter;
 }
 
-inline const glm::vec3& Mesh::size() const
+inline const vec3& Mesh::size() const
 {
     return m_MeshSize;
 }
