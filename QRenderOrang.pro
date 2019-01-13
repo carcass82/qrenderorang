@@ -37,8 +37,7 @@ win32-g++:LIBS     += -lopengl32
 INCLUDEPATH        += ext
 
 #
-# GLEW - statically linked
+# GLEW
 #
 SOURCES            += ext/glew/glew.c
 INCLUDEPATH        += ext/glew/include
-DEFINES            += GLEW_STATIC

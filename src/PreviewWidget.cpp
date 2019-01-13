@@ -27,6 +27,7 @@ using cc::util::max;
 using cc::math::radians;
 using cc::math::perspective;
 using cc::math::lookAt;
+using cc::math::value_ptr;
 
 PreviewWidget::PreviewWidget(QWidget* parent)
     : QGLWidget(parent)
@@ -71,8 +72,13 @@ void PreviewWidget::initializeGL()
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
-    vec4 light_position{1., 1., 1., .0};
-    glLightfv(GL_LIGHT0, GL_POSITION, reinterpret_cast<float*>(&light_position));
+    // TODO: light should be adjustable
+    const vec4 light_position{ 2.f, 2.f, -1.f, .0f };
+    const vec4 white{ 1.f, 1.f, 1.f, 1.f };
+    glLightfv(GL_LIGHT0, GL_POSITION, value_ptr(light_position));
+    glLightfv(GL_LIGHT0, GL_AMBIENT,  value_ptr(white));
+    glLightfv(GL_LIGHT0, GL_DIFFUSE,  value_ptr(white));
+    glLightfv(GL_LIGHT0, GL_SPECULAR, value_ptr(white));
 
     glEnable(GL_COLOR_MATERIAL);
 
@@ -92,7 +98,7 @@ void PreviewWidget::resizeGL(int width, int height)
     glMatrixMode(GL_PROJECTION);
 
     mat4 projection = perspective(radians(45.0f), (GLfloat)width / (GLfloat)max(1, height), 0.1f, 1000.f);
-    glLoadMatrixf(reinterpret_cast<float*>(&projection));
+    glLoadMatrixf(value_ptr(projection));
 }
 
 void PreviewWidget::paintGL()
@@ -108,7 +114,7 @@ void PreviewWidget::paintGL()
         vec3 tocenter = -m_Mesh->center();
         float normalizefactor = 1.f / max(m_Mesh->size().x, max(m_Mesh->size().y, m_Mesh->size().z));
 
-        glLoadMatrixf(reinterpret_cast<float*>(&m_ModelView));
+        glLoadMatrixf(value_ptr(m_ModelView));
         glRotatef(m_delta.y(), 1.0f, 0.0f, 0.0f);
         glRotatef(m_delta.x(), 0.0f, 1.0f, 0.0f);
         glScalef(normalizefactor, normalizefactor, normalizefactor);

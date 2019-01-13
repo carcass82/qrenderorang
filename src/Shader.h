@@ -36,7 +36,6 @@ public:
     virtual ~Shader();
     void start();
     void stop();
-    bool isUsable() const;
     void compileAndLink();
     void setSource(const QString& v, const QString& f);
     const QString& compileLog();
@@ -45,18 +44,12 @@ private:
     bool CheckError(GLuint obj, GLuint check);
     void FillInfoLog(GLuint obj);
 
-    bool m_usable;
     QString m_vertSource;
     QString m_fragSource;
     QString m_compileLog;
     GLuint m_shaderProgram;
     bool m_shaderLinked;
 };
-
-inline bool Shader::isUsable() const
-{
-    return m_usable;
-}
 
 inline void Shader::setSource(const QString &v, const QString &f)
 {

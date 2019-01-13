@@ -25,7 +25,6 @@
 #include "Shader.h"
 
 Shader::Shader()
-    : m_usable(false)
 {
     m_shaderProgram = glCreateProgram();
 }
@@ -37,7 +36,7 @@ Shader::~Shader()
 
 void Shader::start()
 {
-    if (m_usable)
+    if (glIsProgram(m_shaderProgram))
     {
         glUseProgram(m_shaderProgram);
     }
@@ -87,7 +86,6 @@ void Shader::compileAndLink()
     if (CheckError(m_shaderProgram, GL_LINK_STATUS))
     {
         m_compileLog = "OK";
-        m_usable = true;
     }
 
     glDeleteShader(vertShader);

@@ -37,8 +37,8 @@ using cc::math::cross;
 
 namespace
 {
-    static inline constexpr vec3 min_componentwise(const vec3& a, const vec3& b) { return vec3(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)); }
-    static inline constexpr vec3 max_componentwise(const vec3& a, const vec3& b) { return vec3(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)); }
+constexpr vec3 min3(const vec3& a, const vec3& b) { return vec3(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)); }
+constexpr vec3 max3(const vec3& a, const vec3& b) { return vec3(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)); }
 }
 
 
@@ -49,6 +49,9 @@ Mesh::Mesh()
 
 Mesh::~Mesh()
 {
+    glDeleteBuffers(1, &m_VBuffer);
+    glDeleteBuffers(1, &m_IBuffer);
+
     delete m_Material;
     m_Material = nullptr;
 }
@@ -313,11 +316,17 @@ void Mesh::Load(const QString& filePath)
         m_Indices.clear();
 
         bool recompute_normals = true;
-        uint i = 0;
+        QMap<int, int> indices_remap;
         for (const tinyobj::shape_t& shape : shapes)
         {
             for (const tinyobj::index_t& index : shape.mesh.indices)
             {
+                if (indices_remap.contains(index.vertex_index))
+                {
+                    m_Indices.push_back(indices_remap[index.vertex_index]);
+                    continue;
+                }
+
                 const int voffset = 3 * index.vertex_index;
                 vec3 pos = vec3{ attrib.vertices[voffset], attrib.vertices[voffset + 1], attrib.vertices[voffset + 2] };
 
@@ -337,7 +346,8 @@ void Mesh::Load(const QString& filePath)
                 }
 
                 m_Vertices.push_back({ pos, normal, uv, vec3(.0), vec3(.0) });
-                m_Indices.push_back(i++);
+                m_Indices.push_back(m_Vertices.size() - 1);
+                indices_remap.insert(index.vertex_index, m_Vertices.size() - 1);
             }
         }
 
@@ -409,8 +419,8 @@ void Mesh::ComputeBoundingBox()
     vec3 vmax;
     for (auto vertex : m_Vertices)
     {
-        vmin = min_componentwise(vmin, vertex.pos);
-        vmax = max_componentwise(vmax, vertex.pos);
+        vmin = min3(vmin, vertex.pos);
+        vmax = max3(vmax, vertex.pos);
     }
 
     m_MeshCenter = vec3((vmax.x + vmin.x) / 2.f, (vmax.y + vmin.y) / 2.f, (vmax.z + vmin.z) / 2.f);
@@ -419,6 +429,9 @@ void Mesh::ComputeBoundingBox()
 
 void Mesh::SetupBuffers()
 {
+    glDeleteBuffers(1, &m_VBuffer);
+    glDeleteBuffers(1, &m_IBuffer);
+
     glGenBuffers(1, &m_VBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, m_VBuffer);
     glBufferData(GL_ARRAY_BUFFER, m_Vertices.size() * sizeof(Vertex), &m_Vertices[0], GL_STATIC_DRAW);
