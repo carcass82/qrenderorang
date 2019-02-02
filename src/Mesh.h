@@ -62,8 +62,8 @@ private:
     void ComputeTangentsAndBitangents();
     void SetupBuffers();
 
-    GLuint m_VBuffer;
-    GLuint m_IBuffer;
+    GLuint m_VBuffer = 0;
+    GLuint m_IBuffer = 0;
 
     struct Vertex
     {

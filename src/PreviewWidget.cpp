@@ -25,6 +25,9 @@
 
 using cc::util::max;
 using cc::math::radians;
+using cc::math::translate;
+using cc::math::rotate;
+using cc::math::scale;
 using cc::math::perspective;
 using cc::math::lookAt;
 using cc::math::value_ptr;
@@ -51,13 +54,25 @@ PreviewWidget::~PreviewWidget()
     m_Mesh = nullptr;
 }
 
-void PreviewWidget::updateCamera()
+void PreviewWidget::updateMatrices()
 {
     vec3 eye = m_CameraPos;
     vec3 center(.0f, .0f, .0f);
     vec3 up(.0f, 1.f, .0f);
 
-    m_ModelView = lookAt(eye, center, up);
+    m_ViewMatrix = lookAt(eye, center, up);
+
+    if (m_Mesh)
+    {
+        vec3 tocenter = -m_Mesh->center();
+        float normalizefactor = 1.f / max(m_Mesh->size().x, max(m_Mesh->size().y, m_Mesh->size().z));
+
+        m_ModelMatrix = m_ViewMatrix;
+        m_ModelMatrix = rotate(m_ModelMatrix, radians(m_delta.y()), vec3{ 1.f, .0f, .0f });
+        m_ModelMatrix = rotate(m_ModelMatrix, radians(-m_delta.x()), vec3{ .0f, 1.f, .0f });
+        m_ModelMatrix = scale(m_ModelMatrix, vec3(normalizefactor));
+        m_ModelMatrix = translate(m_ModelMatrix, tocenter);
+    }
 }
 
 void PreviewWidget::initializeGL()
@@ -88,7 +103,7 @@ void PreviewWidget::initializeGL()
     m_Mesh = new Mesh();
     m_Mesh->Load(Mesh::SPHERE);
 
-    updateCamera();
+    updateMatrices();
 }
 
 void PreviewWidget::resizeGL(int width, int height)
@@ -97,8 +112,8 @@ void PreviewWidget::resizeGL(int width, int height)
 
     glMatrixMode(GL_PROJECTION);
 
-    mat4 projection = perspective(radians(45.0f), (GLfloat)width / (GLfloat)max(1, height), 0.1f, 1000.f);
-    glLoadMatrixf(value_ptr(projection));
+    m_ProjectionMatrix = perspective(radians(45.0f), (GLfloat)width / (GLfloat)max(1, height), 0.1f, 1000.f);
+    glLoadMatrixf(value_ptr(m_ProjectionMatrix));
 }
 
 void PreviewWidget::paintGL()
@@ -110,15 +125,7 @@ void PreviewWidget::paintGL()
         glPolygonMode(GL_FRONT_AND_BACK, m_Wireframe ? GL_LINE : GL_FILL);
 
         glMatrixMode(GL_MODELVIEW);
-
-        vec3 tocenter = -m_Mesh->center();
-        float normalizefactor = 1.f / max(m_Mesh->size().x, max(m_Mesh->size().y, m_Mesh->size().z));
-
-        glLoadMatrixf(value_ptr(m_ModelView));
-        glRotatef(m_delta.y(), 1.0f, 0.0f, 0.0f);
-        glRotatef(m_delta.x(), 0.0f, 1.0f, 0.0f);
-        glScalef(normalizefactor, normalizefactor, normalizefactor);
-        glTranslatef(tocenter.x, tocenter.y, tocenter.z);
+        glLoadMatrixf(value_ptr(m_ModelMatrix));
 
         m_Mesh->Draw();
     }
@@ -137,7 +144,8 @@ void PreviewWidget::mouseMoveEvent(QMouseEvent* e)
     {
         m_delta += (pos - m_pos);
     }
-    m_pos = pos; 
+    m_pos = pos;
+    updateMatrices();
     updateGL();
 }
 
@@ -150,6 +158,6 @@ void PreviewWidget::mouseReleaseEvent(QMouseEvent* e)
 void PreviewWidget::wheelEvent(QWheelEvent* e)
 {
     m_CameraPos.z -= (m_CameraPos.z * e->delta() / 120.0f) / 20.0f;
-    updateCamera();
+    updateMatrices();
     updateGL();
 }

@@ -39,5 +39,6 @@ INCLUDEPATH        += ext
 #
 # GLEW
 #
+DEFINES            += GLEW_STATIC
 SOURCES            += ext/glew/glew.c
 INCLUDEPATH        += ext/glew/include

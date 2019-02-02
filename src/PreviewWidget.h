@@ -59,14 +59,16 @@ protected:
     void wheelEvent(QWheelEvent*);
 
 private:
-    void updateCamera();
+    void updateMatrices();
 
     vec3 m_CameraPos;
     Qt::MouseButton m_button;
     QPoint m_pos;
     QPoint m_delta;
     Mesh* m_Mesh;
-    mat4 m_ModelView;
+    mat4 m_ViewMatrix;
+    mat4 m_ModelMatrix;
+    mat4 m_ProjectionMatrix;
     bool m_Initialized;
     bool m_Wireframe;
 };
@@ -87,7 +89,7 @@ inline void PreviewWidget::SetMesh(Mesh* mesh)
     delete m_Mesh;
     m_Mesh = mesh;
 
-    updateCamera();
+    updateMatrices();
     updateGL();
 }
 
