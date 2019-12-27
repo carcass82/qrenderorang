@@ -23,7 +23,7 @@
  ****************************************************************************/
 #include "PreviewWidget.h"
 
-using cc::util::max;
+using cc::math::max;
 using cc::math::radians;
 using cc::math::translate;
 using cc::math::rotate;

@@ -21,14 +21,15 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA             *
  *                                                                          *
  ****************************************************************************/
+#include <QMap>
 
 #include "Mesh.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tinyobj/tiny_obj_loader.h"
 
-using cc::util::min;
-using cc::util::max;
+using cc::math::min;
+using cc::math::max;
 using cc::math::PI;
 using cc::math::vec3;
 using cc::math::vec2;
