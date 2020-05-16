@@ -21,56 +21,75 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA             *
  *                                                                          *
  ****************************************************************************/
-
 #pragma once
-#include "GL/glew.h"
-
-#include <QGLWidget>
-#include <QMessageBox>
+#include <QOpenGLWidget>
+#include <QOpenGLFunctions_3_3_Compatibility>
 #include <QMouseEvent>
+#include "Common.h"
+#include "Uniform.h"
 
-#include "Mesh.h"
-#include "Shader.h"
+class Mesh;
+class Material;
 
-#include "cclib/cclib.h"
-using cc::math::vec3;
-using cc::math::mat4;
-
-
-class PreviewWidget : public QGLWidget
+class PreviewWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Compatibility
 {
 public:
-    PreviewWidget(QWidget *parent = 0);
-    PreviewWidget(QGLFormat format, QWidget* parent = 0);
-    ~PreviewWidget();
+    PreviewWidget(QSurfaceFormat format, QWidget *parent = 0);
     bool isInitialized() const;
     bool wireframe() const;
-    void ToggleWireframe();
+    bool toggleWireframe();
+    bool toggleUnlit();
+    bool unlit() const;
     Mesh* mesh() const;
-    void SetMesh(Mesh* mesh);
+    void setMesh(Mesh* mesh);
+
+    void setShader(const QString& v, const QString& f);
 
 protected:
-    void initializeGL();
-    void paintGL();
-    void resizeGL(int w, int h);
-    void mousePressEvent(QMouseEvent*);
-    void mouseMoveEvent(QMouseEvent*);
-    void mouseReleaseEvent(QMouseEvent*);
-    void wheelEvent(QWheelEvent*);
+    virtual void initializeGL() override;
+    virtual void paintGL() override;
+    virtual void resizeGL(int w, int h) override;
+
+protected:
+    virtual void mousePressEvent(QMouseEvent*) override;
+    virtual void mouseMoveEvent(QMouseEvent*) override;
+    virtual void mouseReleaseEvent(QMouseEvent*) override;
+    virtual void wheelEvent(QWheelEvent*) override;
 
 private:
+    void renderText(const vec2& textPos, const QString& text, const vec4& color = vec4(255), const QFont& font = QFontDatabase::systemFont(QFontDatabase::FixedFont));
+    void setupMaterial();
+    void drawMesh();
+    void updateMesh();
+    void updateMaterial();
+    void updateShader();
+    void resetTransforms();
     void updateMatrices();
 
     vec3 m_CameraPos;
     Qt::MouseButton m_button;
     QPoint m_pos;
     QPoint m_delta;
-    Mesh* m_Mesh;
+    
     mat4 m_ViewMatrix;
     mat4 m_ModelMatrix;
     mat4 m_ProjectionMatrix;
-    bool m_Initialized;
-    bool m_Wireframe;
+    
+    bool m_Initialized = false;
+    bool m_Wireframe = false;
+    bool m_Unlit = false;
+    
+    Mesh* m_Mesh = nullptr;
+    Mesh* m_newMesh = nullptr;
+    GLuint m_VAO;
+
+    bool m_uploadMaterialParams = false;
+    QVector<Uniform> Uniforms;
+
+    bool m_buildShader = false;
+    QString m_VS;
+    QString m_FS;
+    GLuint m_SP = 0;
 };
 
 
@@ -84,22 +103,42 @@ inline Mesh* PreviewWidget::mesh() const
     return m_Mesh;
 }
 
-inline void PreviewWidget::SetMesh(Mesh* mesh)
+inline void PreviewWidget::setMesh(Mesh* mesh)
 {
-    delete m_Mesh;
-    m_Mesh = mesh;
-
-    updateMatrices();
-    updateGL();
+    m_newMesh = mesh;
+    update();
 }
 
-inline void PreviewWidget::ToggleWireframe()
+inline void PreviewWidget::setShader(const QString& v, const QString& f)
+{
+    m_VS = v;
+    m_FS = f;
+    m_buildShader = true;
+    update();
+}
+
+inline bool PreviewWidget::toggleWireframe()
 {
     m_Wireframe = !m_Wireframe;
-    updateGL();
+    update();
+
+    return m_Wireframe;
 }
 
 inline bool PreviewWidget::wireframe() const
 {
     return m_Wireframe;
+}
+
+inline bool PreviewWidget::toggleUnlit()
+{
+    m_Unlit = !m_Unlit;
+    update();
+
+    return m_Unlit;
+}
+
+inline bool PreviewWidget::unlit() const
+{
+    return m_Unlit;
 }

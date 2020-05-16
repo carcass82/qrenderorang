@@ -21,90 +21,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA             *
  *                                                                          *
  ****************************************************************************/
-#include <QMap>
-
 #include "Mesh.h"
+#include <QMap>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tinyobj/tiny_obj_loader.h"
 
-using cc::math::min;
-using cc::math::max;
-using cc::math::PI;
-using cc::math::vec3;
-using cc::math::vec2;
-using cc::math::normalize;
-using cc::math::cross;
-
-namespace
-{
-constexpr vec3 min3(const vec3& a, const vec3& b) { return vec3(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z)); }
-constexpr vec3 max3(const vec3& a, const vec3& b) { return vec3(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z)); }
-}
-
-
-Mesh::Mesh()
-    : m_Material(nullptr)
-{
-}
-
-Mesh::~Mesh()
-{
-    glDeleteBuffers(1, &m_VBuffer);
-    glDeleteBuffers(1, &m_IBuffer);
-
-    delete m_Material;
-    m_Material = nullptr;
-}
-
-void Mesh::Draw()
-{
-    glColor3f(1.0f, 1.0f, 1.0f);
-
-    if (m_Material == nullptr)
-    {
-        m_Material = new Material(); // load default material
-    }
-
-    glBindBuffer(GL_ARRAY_BUFFER, m_VBuffer);
-
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_FLOAT, sizeof(Vertex), (GLvoid*)offsetof(Vertex, pos));
-
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glNormalPointer(GL_FLOAT, sizeof(Vertex), (GLvoid*)offsetof(Vertex, normal));
-
-    glClientActiveTexture(GL_TEXTURE0);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), (GLvoid*)offsetof(Vertex, uv0));
-
-    glClientActiveTexture(GL_TEXTURE1);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(3, GL_FLOAT, sizeof(Vertex), (GLvoid*)offsetof(Vertex, tangent));
-    
-    glClientActiveTexture(GL_TEXTURE2);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glTexCoordPointer(3, GL_FLOAT, sizeof(Vertex), (GLvoid*)offsetof(Vertex, bitangent));
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IBuffer);
-
-    m_Material->BeginDraw(0);
-
-    glDrawElements(GL_TRIANGLES, m_Indices.size(), GL_UNSIGNED_INT, (GLvoid*)0);
-
-    m_Material->EndDraw();
-
-    glClientActiveTexture(GL_TEXTURE2);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glClientActiveTexture(GL_TEXTURE1);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glClientActiveTexture(GL_TEXTURE0);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
-}
-
-void Mesh::Load(MeshType Shape)
+Mesh* Mesh::Load(MeshType Shape)
 {
     m_Vertices.clear();
     m_Indices.clear();
@@ -301,10 +224,11 @@ void Mesh::Load(MeshType Shape)
 
     ComputeBoundingBox();
     ComputeTangentsAndBitangents();
-    SetupBuffers();
+
+    return this;
 }
 
-void Mesh::Load(const QString& filePath)
+Mesh* Mesh::Load(const QString& filePath)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -359,8 +283,9 @@ void Mesh::Load(const QString& filePath)
 
         ComputeBoundingBox();
         ComputeTangentsAndBitangents();
-        SetupBuffers();
     }
+
+    return this;
 }
 
 void Mesh::ComputeNormals()
@@ -420,26 +345,10 @@ void Mesh::ComputeBoundingBox()
     vec3 vmax;
     for (auto vertex : m_Vertices)
     {
-        vmin = min3(vmin, vertex.pos);
-        vmax = max3(vmax, vertex.pos);
+        vmin = pmin(vmin, vertex.pos);
+        vmax = pmax(vmax, vertex.pos);
     }
 
     m_MeshCenter = vec3((vmax.x + vmin.x) / 2.f, (vmax.y + vmin.y) / 2.f, (vmax.z + vmin.z) / 2.f);
     m_MeshSize = vec3(vmax.x - vmin.x, vmax.y - vmin.y, vmax.z - vmin.z);
-}
-
-void Mesh::SetupBuffers()
-{
-    glDeleteBuffers(1, &m_VBuffer);
-    glDeleteBuffers(1, &m_IBuffer);
-
-    glGenBuffers(1, &m_VBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, m_VBuffer);
-    glBufferData(GL_ARRAY_BUFFER, m_Vertices.size() * sizeof(Vertex), &m_Vertices[0], GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    glGenBuffers(1, &m_IBuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_Indices.size() * sizeof(uint32_t), &m_Indices[0], GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }

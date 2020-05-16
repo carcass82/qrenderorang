@@ -21,23 +21,43 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA             *
  *                                                                          *
  ****************************************************************************/
-#include <QtGui>
-#include <QApplication>
-#include <QtWidgets>
-#include "MainWidget.h"
+#pragma once
+#include <QMainWindow>
+#include <QMessageBox>
+#include <QFileDialog>
+#include <QDate>
 
-int main(int argc, char** argv)
+#include "PreviewWidget.h"
+#include "Mesh.h"
+#include "ui_qrenderorang.h"
+
+class GLSLSyntaxHlighter;
+
+class MainWidget : public QMainWindow
 {
-	QApplication app(argc, argv);
+	Q_OBJECT
 
-    QSplashScreen splash(QPixmap(":/images/splash.png"), Qt::WindowStaysOnTopHint);
-    splash.showMessage("Loading QRenderOrang...", Qt::AlignBottom | Qt::AlignLeft, Qt::white);
-	splash.show();
+public:
+	MainWidget(QWidget *parent = 0);
 
-    MainWidget w;
-	w.showMaximized();
+public slots:
+	void loadDefaultShader();
+	void loadFile();
+	void about();
+	void compileShader();
+    void loadBuiltinMesh(Mesh::MeshType type);
+    void loadMesh();
 
-	splash.finish(&w);
+private:
+	void setupActions();
+	void setupGLPreview();
+	void setupEditor();
 
-	return app.exec();
-}
+	QString fileProjectName;
+	Ui::QRenderOrangGUI ui;
+    QTextEdit* m_textVert;
+    QTextEdit* m_textFrag;
+	PreviewWidget* glWidget;
+    GLSLSyntaxHlighter* m_textVertHL;
+    GLSLSyntaxHlighter* m_textFragHL;
+};

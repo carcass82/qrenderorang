@@ -21,23 +21,68 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA             *
  *                                                                          *
  ****************************************************************************/
-#include <QtGui>
-#include <QApplication>
-#include <QtWidgets>
-#include "MainWidget.h"
+#pragma once
+#include <QPlainTextEdit>
+#include <QDateTime>
+#include <QDebug>
 
-int main(int argc, char** argv)
+#include "cclib/cclib.h"
+using cc::math::PI;
+using cc::math::vec2;
+using cc::math::vec3;
+using cc::math::vec4;
+using cc::math::mat4;
+using cc::math::pmin;
+using cc::math::pmax;
+using cc::math::max;
+using cc::math::min;
+using cc::math::radians;
+using cc::math::translate;
+using cc::math::rotate;
+using cc::math::scale;
+using cc::math::perspective;
+using cc::math::lookAt;
+using cc::math::value_ptr;
+
+//
+//
+//
+
+struct Vertex
 {
-	QApplication app(argc, argv);
+    vec3 pos;
+    vec3 normal;
+    vec2 uv0;
+    vec3 tangent;
+    vec3 bitangent;
+};
 
-    QSplashScreen splash(QPixmap(":/images/splash.png"), Qt::WindowStaysOnTopHint);
-    splash.showMessage("Loading QRenderOrang...", Qt::AlignBottom | Qt::AlignLeft, Qt::white);
-	splash.show();
+using Index = uint32_t;
 
-    MainWidget w;
-	w.showMaximized();
+//
+//
+//
 
-	splash.finish(&w);
+class Logger
+{
+public:
+    static Logger& get()                          { static Logger instance; return instance; }
+    void setOutputWidget(QPlainTextEdit* widget)  { textWidget = widget; }
 
-	return app.exec();
-}
+    void log(const QString& message)
+    {
+        QString timeStamp = QDateTime::currentDateTime().toString("[hh:mm:ss]");
+
+        if (Q_LIKELY(textWidget))
+        {
+            textWidget->appendPlainText(QString("%1 %2").arg(timeStamp, message));
+        }
+
+        qDebug().noquote() << "LOG:" << timeStamp << message;
+    }
+
+private:
+    QPlainTextEdit* textWidget;
+};
+
+#define LOG(x) Logger::get().log(x)

@@ -22,42 +22,80 @@
  *                                                                          *
  ****************************************************************************/
 #pragma once
-
-#include <QVector>
-#include <QList>
 #include <QString>
+#include <QVector>
+#include "PreviewWidget.h"
 
-#include "GL/glew.h"
-
-class Shader
+class Mesh
 {
 public:
-    Shader();
-    virtual ~Shader();
-    void start();
-    void stop();
-    void compileAndLink();
-    void setSource(const QString& v, const QString& f);
-    const QString& compileLog();
+    enum MeshType { CUBE, SPHERE };
+
+    Mesh* Load(MeshType Shape);
+    Mesh* Load(const QString& filePath);
+
+    Vertex* vertices();
+    uint32_t* indices();
+    size_t numVertices() const;
+    size_t numIndices() const;
+    size_t numTriangles() const;
+    const vec3& center() const;
+    const vec3& size() const;
+
+    static QString typeToString(Mesh::MeshType type);
 
 private:
-    bool CheckError(GLuint obj, GLuint check);
-    void FillInfoLog(GLuint obj);
+    void ComputeNormals();
+    void ComputeBoundingBox();
+    void ComputeTangentsAndBitangents();
 
-    QString m_vertSource;
-    QString m_fragSource;
-    QString m_compileLog;
-    GLuint m_shaderProgram;
-    bool m_shaderLinked;
+    vec3 m_MeshCenter;
+    vec3 m_MeshSize;
+    QVector<Vertex> m_Vertices;
+    QVector<uint32_t> m_Indices;
 };
 
-inline void Shader::setSource(const QString &v, const QString &f)
+inline Vertex* Mesh::vertices()
 {
-    m_vertSource = v;
-    m_fragSource = f;
+    return &m_Vertices[0];
 }
 
-inline const QString& Shader::compileLog()
+inline uint32_t* Mesh::indices()
 {
-    return m_compileLog;
+    return &m_Indices[0];
+}
+
+inline size_t Mesh::numVertices() const
+{
+    return m_Vertices.size();
+}
+
+inline size_t Mesh::numIndices() const
+{
+    return m_Indices.size();
+}
+
+inline size_t Mesh::numTriangles() const
+{
+    return m_Indices.size() / 3;
+}
+
+inline const vec3& Mesh::center() const
+{
+    return m_MeshCenter;
+}
+
+inline const vec3& Mesh::size() const
+{
+    return m_MeshSize;
+}
+
+inline QString Mesh::typeToString(Mesh::MeshType type)
+{
+    switch (type)
+    {
+    case MeshType::CUBE:   return "Cube (builtin)";
+    case MeshType::SPHERE: return "Sphere (builtin)";
+    default:               return "";
+    }
 }

@@ -21,25 +21,16 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA             *
  *                                                                          *
  ****************************************************************************/
-
 #pragma once
-
-#include <QMainWindow>
-#include <QMessageBox>
-#include <QFileDialog>
-#include <QTreeWidgetItem>
 #include <QSyntaxHighlighter>
-#include <QDate>
-#include "PreviewWidget.h"
-#include "ui_qrenderorang.h"
 
-class GLSLSynHlighter : public QSyntaxHighlighter
+class GLSLSyntaxHlighter : public QSyntaxHighlighter
 {
 public:
-    GLSLSynHlighter(QTextDocument *parent = 0);
+    GLSLSyntaxHlighter(QTextDocument* parent = 0);
 
 protected:
-    void highlightBlock(const QString &text);
+    void highlightBlock(const QString& text);
 
 private:
     struct HighlightingRule
@@ -57,36 +48,4 @@ private:
 
     QRegExp commentStartExpression;
     QRegExp commentEndExpression;
-};
-
-class MainWidget : public QMainWindow
-{
-	Q_OBJECT
-
-public:
-	MainWidget(QWidget *parent = 0);
-    ~MainWidget();
-	void logMessage(const QString&);
-
-public slots:
-	void loadDefaultShader();
-	void loadFile();
-	void about();
-	void compileShader();
-    void selectMesh(Mesh::MeshType type);
-    void toggleWireframeView();
-    void loadMesh();
-
-private:
-	void setupActions();
-	void setupGLPreview();
-	void setupEditor();
-
-	QString fileProjectName;
-	Ui::QRenderOrangGUI ui;
-    QTextEdit* m_textVert;
-    QTextEdit* m_textFrag;
-	PreviewWidget* glOutput;
-    GLSLSynHlighter* m_textVertHL;
-    GLSLSynHlighter* m_textFragHL;
 };

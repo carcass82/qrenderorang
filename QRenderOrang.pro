@@ -4,22 +4,24 @@ TEMPLATE            = app
 TARGET              = QRenderOrang
 QT                 += core gui widgets opengl
 
-HEADERS            += src/MainWidget.h         \
-                      src/PreviewWidget.h      \
-                      src/Shader.h             \
-                      src/Mesh.h               \
-					  src/Material.h
+HEADERS            += include/Common.h             \
+                      include/MainWidget.h         \
+                      include/PreviewWidget.h      \
+                      include/Mesh.h               \
+                      include/Uniform.h            \
+                      include/SyntaxHighlighter.h
 
-
-SOURCES            += src/MainWidget.cpp       \
-                      src/PreviewWidget.cpp    \
-                      src/Shader.cpp           \
-                      src/Mesh.cpp             \
-					  src/Material.cpp         \
+SOURCES            += src/MainWidget.cpp         \
+                      src/PreviewWidget.cpp      \
+                      src/Mesh.cpp               \
+                      src/Uniform.cpp            \
+                      src/SyntaxHighlighter.cpp  \
                       src/main.cpp
 
-FORMS              += src/qrenderorang.ui
-RESOURCES           = src/qrenderorang.qrc
+FORMS              += ui/qrenderorang.ui
+
+RESOURCES           = ui/qrenderorang.qrc
+
 
 OBJECTS_DIR         = build
 UI_DIR              = build/ui
@@ -31,14 +33,5 @@ win32-msvc*:LIBS   += -lOpenGL32
 win32-g++:LIBS     += -lopengl32
 !win32:LIBS        += -lGL
 
-#
-# add "ext" libs includepath
-#
-INCLUDEPATH        += ext
-
-#
-# GLEW
-#
-DEFINES            += GLEW_STATIC
-SOURCES            += ext/glew/glew.c
-INCLUDEPATH        += ext/glew/include
+INCLUDEPATH        += $$PWD/ext
+INCLUDEPATH        += $$PWD/include
