@@ -31,12 +31,12 @@ GLSLSyntaxHlighter::GLSLSyntaxHlighter(QTextDocument *parent)
     kwordsFormat.setForeground(Qt::blue);
     QStringList keywords;
     keywords << "uniform" << "int" << "float" << "bool" << "inout"
-        << "vec2" << "vec3" << "vec4" << "ivec2" << "out"
-        << "ivec3" << "ivec4" << "bvec2" << "bvec3" << "in"
-        << "bvec4" << "mat2" << "mat3" << "mat4" << "attribute"
-        << "sampler1D" << "sampler2D" << "sampler3D"
-        << "samplerCube" << "sampler1DShadow" << "void"
-        << "sampler2DShadow" << "varying" << "const";
+             << "vec2" << "vec3" << "vec4" << "ivec2" << "out"
+             << "ivec3" << "ivec4" << "bvec2" << "bvec3" << "in"
+             << "bvec4" << "mat2" << "mat3" << "mat4" << "attribute"
+             << "sampler1D" << "sampler2D" << "sampler3D"
+             << "samplerCube" << "sampler1DShadow" << "void"
+             << "sampler2DShadow" << "varying" << "const";
 
     foreach(QString pattern, keywords)
     {
@@ -47,19 +47,18 @@ GLSLSyntaxHlighter::GLSLSyntaxHlighter(QTextDocument *parent)
 
     builtinsFormat.setForeground(Qt::magenta);
     QStringList builtins;
-    builtins << "gl_Position" << "gl_ClipSize" << "gl_ClipVertex"
-             << "gl_Vertex" << "gl_Normal" << "gl_Color" << "gl_FragColor"
-             << "gl_SecondaryColor" << "gl_FogCoord" << "gl_MultiTexCoord[0-7]"
-             << "gl_FrontColor" << "gl_BackColor" << "gl_FrontSecondaryColor"
-             << "gl_BackSecondaryColor" << "gl_TexCoord" << "gl_FogFragCoord"
-             << "gl_FragData" << "gl_FrontFacing" << "gl_FragCoord"
-             << "gl_FragDepth" << "gl_ModelViewMatrix" << "gl_ProjectionMatrix"
+    builtins << "gl_Position" << "gl_Vertex" << "gl_Normal" << "gl_Color" << "gl_TexCoord"
+             << "gl_Clip(Size|Vertex)" << "gl_MultiTexCoord[0-7]"
+             << "gl_(Front|Back|Frag|Secondary)Color" << "gl_(Front|Back)SecondaryColor"
+             << "gl_Fog" << "gl_(Fog|Point)Coord" << "gl_FragCoord" << "gl_FogFragCoord"
+             << "gl_Frag(Data|Depth)" << "gl_FrontFacing"
+             << "gl_ModelViewMatrix" << "gl_ProjectionMatrix"
              << "gl_ModelViewProjectionMatrix" << "gl_ModelViewMatrixInverse"
              << "gl_ModelViewProjectionMatrixInverse" << "gl_NormalMatrix"
              << "gl_NormalScale" << "gl_DepthRange" << "gl_Point"
              << "gl_ModelViewMatrixInverseTranspose" << "gl_LightSource"
              << "gl_ModelViewMatrixTranspose" << "gl_ProjectionMatrixTranspose"
-             << "gl_ModelViewProjectionMatrixInverseTranspose" << "gl_Fog"
+             << "gl_ModelViewProjectionMatrixInverseTranspose" 
              << "gl_ClipPlane" << "gl_(Eye|Object)Plane[STRQ]"
              << "gl_(Front|Back)Material" << "gl_(Front|Back)LightProduct";
 
@@ -100,6 +99,11 @@ GLSLSyntaxHlighter::GLSLSyntaxHlighter(QTextDocument *parent)
     multiLineCommentFormat = singleLineCommentFormat;
     commentStartExpression = QRegExp("/\\*");
     commentEndExpression = QRegExp("\\*/");
+
+    preprocessorFormat.setForeground(Qt::darkGreen);
+    rule.pattern = QRegExp("^\\s*#[^\n]*");
+    rule.format = preprocessorFormat;
+    highlightingRules.append(rule);
 }
 
 void GLSLSyntaxHlighter::highlightBlock(const QString &text)

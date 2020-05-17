@@ -88,6 +88,7 @@ private:
     mat4 m_ModelMatrix;
     mat4 m_ModelViewMatrix;
     mat4 m_ProjectionMatrix;
+    mat4 m_ModelViewProjectionMatrix;
     
     bool m_Initialized = false;
     bool m_Wireframe = false;

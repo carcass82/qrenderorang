@@ -41,7 +41,6 @@ public:
 	MainWidget(QWidget *parent = 0);
 
 public slots:
-	void loadDefaultShader();
 	void loadFile();
 	void about();
 	void compileShader();

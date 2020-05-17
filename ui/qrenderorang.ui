@@ -47,12 +47,12 @@
         </property>
         <widget class="QWidget" name="tabEditorVert">
          <attribute name="title">
-          <string>Vertex Program</string>
+          <string>Vertex Shader</string>
          </attribute>
         </widget>
         <widget class="QWidget" name="tabEditorFrag">
          <attribute name="title">
-          <string>Fragment Program</string>
+          <string>Fragment Shader</string>
          </attribute>
         </widget>
        </widget>
@@ -130,7 +130,6 @@
     <property name="title">
      <string>&amp;Shader</string>
     </property>
-    <addaction name="action_LoadSample"/>
     <addaction name="separator"/>
     <addaction name="action_Compile"/>
    </widget>

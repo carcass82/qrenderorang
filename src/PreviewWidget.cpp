@@ -60,9 +60,12 @@ void PreviewWidget::updateMatrices()
     }
 
     m_ModelViewMatrix = m_ViewMatrix * m_ModelMatrix;
+    m_ModelViewProjectionMatrix = m_ProjectionMatrix * m_ModelViewMatrix;
 
-    setShaderParameter("matrix.view", m_ViewMatrix);
     setShaderParameter("matrix.model", m_ModelMatrix);
+    setShaderParameter("matrix.view", m_ViewMatrix);
+    setShaderParameter("matrix.projection", m_ProjectionMatrix);
+    setShaderParameter("matrix.MVP", m_ModelViewProjectionMatrix);
 }
 
 void PreviewWidget::initializeGL()
@@ -83,34 +86,20 @@ void PreviewWidget::initializeGL()
     resetTransforms();
     updateMatrices();
 
-    QString vs = R"vs(
-#version 330
-layout (location = 0) in vec3 position;
+    QString unlitVS = R"vs(#version 330
+                      layout (location = 0) in vec3 position;
+                      uniform struct { mat4 model; mat4 view; mat4 projection; } matrix;
+                      void main() { gl_Position = matrix.projection * matrix.view * matrix.model * vec4(position, 1.0); })vs";
 
-struct matrices
-{
-	mat4 model;
-	mat4 view;
-	mat4 projection;
-};
-uniform matrices matrix;
-
-void main()
-{
-	gl_Position = matrix.projection * matrix.view * matrix.model * vec4(position, 1.0);
-}
-)vs";
-
-    QString fs = R"fs(
-#version 330
-void main()
-{
-	gl_FragColor = vec4(1,1,1,1);
-}
-)fs";
+    QString unlitFS = R"fs(#version 330
+                      out vec4 outColor;
+                      void main() { outColor = vec4(1,1,1,1); })fs";
 
     QString log;
-    buildShader(vs, fs, m_UnlitSP, log);
+    if (!buildShader(unlitVS, unlitFS, m_UnlitSP, log))
+    {
+        qDebug() << "Unlit Shader compile FAILED: " << log;
+    }
 
     m_Initialized = true;
     LOG(QString("OpenGL initialized: %1 (%2)").arg((const char*)glGetString(GL_VERSION), (const char*)glGetString(GL_RENDERER)));
@@ -124,7 +113,7 @@ void PreviewWidget::resizeGL(int width, int height)
     glLoadMatrixf(value_ptr(m_ProjectionMatrix));
     glMatrixMode(GL_MODELVIEW);
 
-    setShaderParameter("matrix.projection", m_ProjectionMatrix);
+    updateMatrices();
 }
 
 void PreviewWidget::paintGL()

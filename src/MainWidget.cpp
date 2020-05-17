@@ -47,9 +47,11 @@ MainWidget::MainWidget(QWidget* parent)
 
     // register LOG service
     Logger::get().setOutputWidget(ui.textCompileLog);
-
-    // and test it!
     LOG("MainWindow initialized");
+
+    // compile default shader
+    loadBuiltinMesh(Mesh::SPHERE);
+    compileShader();
 }
 
 void MainWidget::setupGLPreview()
@@ -77,49 +79,6 @@ void MainWidget::loadFile()
     // #TODO: add support for project files
 }
 
-void MainWidget::loadDefaultShader()
-{
-    static const QString phongVert =
-	"// (C) Clockworkcoders Tutorials\n"
-	"// http://www.opengl.org/sdk/docs/tutorials/ClockworkCoders/lighting.php\n\n"
-	"varying vec3 N;\n"
-	"varying vec3 v;\n\n"
-	"void main(void)\n"
-	"{\n"
-	"\tv = vec3(gl_ModelViewMatrix * gl_Vertex);\n"
-	"\tN = normalize(gl_NormalMatrix * gl_Normal);\n\n"
-	"\tgl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;\n"
-	"}";
-
-    static const QString phongFrag =
-	"// (C) Clockworkcoders Tutorials\n"
-	"// http://www.opengl.org/sdk/docs/tutorials/ClockworkCoders/lighting.php\n\n"
-	"varying vec3 N;\n"
-	"varying vec3 v;\n\n"
-	"void main(void)\n"
-	"{\n"
-	"\tvec3 L = normalize(gl_LightSource[0].position.xyz - v);\n"
-	"\tvec3 E = normalize(-v); // we are in Eye Coordinates, so EyePos is (0,0,0)\n"
-	"\tvec3 R = normalize(-reflect(L,N));\n\n"
-	"\t//calculate Ambient Term:\n"
-	"\tvec4 Iamb = gl_FrontLightProduct[0].ambient;\n\n"
-	"\t//calculate Diffuse Term:\n"
-	"\tvec4 Idiff = gl_FrontLightProduct[0].diffuse * max(dot(N,L), 0.0);\n"
-	"\tIdiff = clamp(Idiff, 0.0, 1.0);\n\n"
-	"\t// calculate Specular Term:\n"
-	"\tvec4 Ispec = gl_FrontLightProduct[0].specular * pow(max(dot(R,E),0.0),0.3*gl_FrontMaterial.shininess);\n"
-	"\tIspec = clamp(Ispec, 0.0, 1.0);\n\n"
-	"\t// write Total Color:\n"
-	"\tgl_FragColor = gl_FrontLightModelProduct.sceneColor + Iamb + Idiff + Ispec;\n"
-	"}\n";
-
-    if (m_textVert && m_textFrag)
-    {
-        m_textVert->setText(phongVert);
-        m_textFrag->setText(phongFrag);
-	}
-}
-
 void MainWidget::compileShader()
 {
     glWidget->setShader(m_textVert->toPlainText(), m_textFrag->toPlainText());
@@ -130,7 +89,6 @@ void MainWidget::setupActions()
     // Menu
     connect(ui.action_Open,       SIGNAL(triggered()), this, SLOT(loadFile()));
     connect(ui.action_Quit,       SIGNAL(triggered()), this, SLOT(close()));
-    connect(ui.action_LoadSample, SIGNAL(triggered()), this, SLOT(loadDefaultShader()));
     connect(ui.action_Compile,    SIGNAL(triggered()), this, SLOT(compileShader()));
     connect(ui.action_Qt,         SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     connect(ui.action_QRO,        SIGNAL(triggered()), this, SLOT(about()));
@@ -189,9 +147,6 @@ void MainWidget::setupEditor()
     m_textVert->setWordWrapMode(QTextOption::WrapMode::NoWrap);
     m_textFrag->setWordWrapMode(QTextOption::WrapMode::NoWrap);
 
-    m_textVert->setWindowTitle("untitled.vert");
-    m_textFrag->setWindowTitle("untitled.frag");
-
     const QFont fixedfont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     m_textVert->setFont(fixedfont);
     m_textFrag->setFont(fixedfont);
@@ -208,6 +163,39 @@ void MainWidget::setupEditor()
 
 	ui.tabEditorFrag->setLayout(new QGridLayout());
     ((QGridLayout*)ui.tabEditorFrag->layout())->addWidget(m_textFrag);
+
+    m_textVert->setText(R"vs(#version 330
+
+// available builtin vertex data and locations
+layout (location = 0) in vec3 position;
+//layout (location = 1) in vec3 normal;
+//layout (location = 2) in vec2 uv;
+//layout (location = 3) in vec3 tangent;
+//layout (location = 4) in vec3 bitangent;
+
+// available builtin matrices
+uniform struct
+{
+	//mat4 projection;
+	//mat4 view;
+	//mat4 model;
+    mat4 MVP;
+} matrix;
+
+void main()
+{
+	gl_Position = matrix.MVP * vec4(position, 1);
+})vs");
+
+    m_textFrag->setText(R"fs(#version 330
+
+out vec4 outColor;
+
+void main()
+{
+	outColor = vec4(1,1,1,1);
+})fs");
+
 }
 
 void MainWidget::about()

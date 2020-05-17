@@ -43,6 +43,7 @@ private:
     QTextCharFormat kwordsFormat;
     QTextCharFormat builtinsFormat;
     QTextCharFormat functionFormat;
+    QTextCharFormat preprocessorFormat;
     QTextCharFormat singleLineCommentFormat;
     QTextCharFormat multiLineCommentFormat;
 
