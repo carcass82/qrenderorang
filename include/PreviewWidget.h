@@ -25,8 +25,8 @@
 #include <QOpenGLWidget>
 #include <QOpenGLFunctions_3_3_Compatibility>
 #include <QMouseEvent>
+#include <QHash>
 #include "Common.h"
-#include "Uniform.h"
 
 class Mesh;
 class Material;
@@ -44,6 +44,17 @@ public:
     void setMesh(Mesh* mesh);
 
     void setShader(const QString& v, const QString& f);
+    
+    template<typename T>
+    void setShaderParameter(QHash<QString, T>& container, const QString& parameter, const T& value, bool remove);
+
+    void setShaderParameter(const QString& parameter, int value, bool remove = false);
+    void setShaderParameter(const QString& parameter, float value, bool remove = false);
+    void setShaderParameter(const QString& parameter, const vec2& value, bool remove = false);
+    void setShaderParameter(const QString& parameter, const vec3& value, bool remove = false);
+    void setShaderParameter(const QString& parameter, const vec4& value, bool remove = false);
+    void setShaderParameter(const QString& parameter, const mat3& value, bool remove = false);
+    void setShaderParameter(const QString& parameter, const mat4& value, bool remove = false);
 
 protected:
     virtual void initializeGL() override;
@@ -58,11 +69,13 @@ protected:
 
 private:
     void renderText(const vec2& textPos, const QString& text, const vec4& color = vec4(255), const QFont& font = QFontDatabase::systemFont(QFontDatabase::FixedFont));
-    void setupMaterial();
+    void updateMaterialParameters(GLuint program);
+    void activateShader(GLuint sp);
+    void deactivateShader();
     void drawMesh();
     void updateMesh();
-    void updateMaterial();
     void updateShader();
+    bool buildShader(const QString& vs, const QString& fs, GLuint& outSP, QString& log);
     void resetTransforms();
     void updateMatrices();
 
@@ -73,6 +86,7 @@ private:
     
     mat4 m_ViewMatrix;
     mat4 m_ModelMatrix;
+    mat4 m_ModelViewMatrix;
     mat4 m_ProjectionMatrix;
     
     bool m_Initialized = false;
@@ -84,12 +98,19 @@ private:
     GLuint m_VAO;
 
     bool m_uploadMaterialParams = false;
-    QVector<Uniform> Uniforms;
+    QHash<QString, int> intParams;
+    QHash<QString, float> floatParams;
+    QHash<QString, vec2> vec2Params;
+    QHash<QString, vec3> vec3Params;
+    QHash<QString, vec4> vec4Params;
+    QHash<QString, mat3> mat3Params;
+    QHash<QString, mat4> mat4Params;
 
     bool m_buildShader = false;
     QString m_VS;
     QString m_FS;
     GLuint m_SP = 0;
+    GLuint m_UnlitSP = 0;
 };
 
 
@@ -141,4 +162,57 @@ inline bool PreviewWidget::toggleUnlit()
 inline bool PreviewWidget::unlit() const
 {
     return m_Unlit;
+}
+
+inline void PreviewWidget::setShaderParameter(const QString& parameter, int value, bool remove)
+{
+    setShaderParameter(intParams, parameter, value, remove);
+}
+
+inline void PreviewWidget::setShaderParameter(const QString& parameter, float value, bool remove)
+{
+    setShaderParameter(floatParams, parameter, value, remove);
+}
+
+inline void PreviewWidget::setShaderParameter(const QString& parameter, const vec2& value, bool remove)
+{
+    setShaderParameter(vec2Params, parameter, value, remove);
+}
+
+inline void PreviewWidget::setShaderParameter(const QString& parameter, const vec3& value, bool remove)
+{
+    setShaderParameter(vec3Params, parameter, value, remove);
+}
+
+inline void PreviewWidget::setShaderParameter(const QString& parameter, const vec4& value, bool remove)
+{
+    setShaderParameter(vec4Params, parameter, value, remove);
+}
+
+inline void PreviewWidget::setShaderParameter(const QString& parameter, const mat3& value, bool remove)
+{
+    setShaderParameter(mat3Params, parameter, value, remove);
+}
+
+inline void PreviewWidget::setShaderParameter(const QString& parameter, const mat4& value, bool remove)
+{
+    setShaderParameter(mat4Params, parameter, value, remove);
+}
+
+template<typename T>
+inline void PreviewWidget::setShaderParameter(QHash<QString, T>& container, const QString& parameter, const T& value, bool remove)
+{
+    if (!container.contains(parameter) || container.value(parameter) != value || remove)
+    {
+        if (remove)
+        {
+            container.remove(parameter);
+        }
+        else
+        {
+            container[parameter] = value;
+        }
+
+        m_uploadMaterialParams = true;
+    }
 }

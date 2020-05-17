@@ -31,6 +31,7 @@ using cc::math::PI;
 using cc::math::vec2;
 using cc::math::vec3;
 using cc::math::vec4;
+using cc::math::mat3;
 using cc::math::mat4;
 using cc::math::pmin;
 using cc::math::pmax;
@@ -71,7 +72,7 @@ public:
 
     void log(const QString& message)
     {
-        QString timeStamp = QDateTime::currentDateTime().toString("[hh:mm:ss]");
+        QString timeStamp = QDateTime::currentDateTime().toString("[hh:mm:ss.zzz]");
 
         if (Q_LIKELY(textWidget))
         {

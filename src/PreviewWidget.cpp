@@ -47,38 +47,73 @@ void PreviewWidget::updateMatrices()
 
     m_ViewMatrix = lookAt(eye, center, up);
 
+    m_ModelMatrix = mat4(1.f);
     if (m_Mesh)
     {
         vec3 tocenter = -(m_Mesh->center());
         float normalizefactor = 1.f / max(m_Mesh->size().x, max(m_Mesh->size().y, m_Mesh->size().z));
 
-        m_ModelMatrix = m_ViewMatrix;
         m_ModelMatrix = rotate(m_ModelMatrix, radians(m_delta.y()), vec3{ 1.0f, 0.0f, 0.0f });
         m_ModelMatrix = rotate(m_ModelMatrix, radians(m_delta.x()), vec3{ 0.0f, 1.0f, 0.0f });
         m_ModelMatrix = scale(m_ModelMatrix, vec3(normalizefactor));
         m_ModelMatrix = translate(m_ModelMatrix, tocenter);
     }
+
+    m_ModelViewMatrix = m_ViewMatrix * m_ModelMatrix;
+
+    setShaderParameter("matrix.view", m_ViewMatrix);
+    setShaderParameter("matrix.model", m_ModelMatrix);
 }
 
 void PreviewWidget::initializeGL()
 {
     initializeOpenGLFunctions();
 
-    glShadeModel(GL_SMOOTH);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_NORMALIZE);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClearDepth(1.0f);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glFrontFace(GL_CCW);
+    glEnable(GL_CULL_FACE);
+
+    glShadeModel(GL_SMOOTH);
     glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
     glEnable(GL_LIGHTING);
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_BLEND);
 
     resetTransforms();
     updateMatrices();
 
+    QString vs = R"vs(
+#version 330
+layout (location = 0) in vec3 position;
+
+struct matrices
+{
+	mat4 model;
+	mat4 view;
+	mat4 projection;
+};
+uniform matrices matrix;
+
+void main()
+{
+	gl_Position = matrix.projection * matrix.view * matrix.model * vec4(position, 1.0);
+}
+)vs";
+
+    QString fs = R"fs(
+#version 330
+void main()
+{
+	gl_FragColor = vec4(1,1,1,1);
+}
+)fs";
+
+    QString log;
+    buildShader(vs, fs, m_UnlitSP, log);
+
     m_Initialized = true;
+    LOG(QString("OpenGL initialized: %1 (%2)").arg((const char*)glGetString(GL_VERSION), (const char*)glGetString(GL_RENDERER)));
 }
 
 void PreviewWidget::resizeGL(int width, int height)
@@ -88,39 +123,50 @@ void PreviewWidget::resizeGL(int width, int height)
     m_ProjectionMatrix = perspective(radians(45.0f), (GLfloat)width / (GLfloat)max(1, height), 0.1f, 1000.f);
     glLoadMatrixf(value_ptr(m_ProjectionMatrix));
     glMatrixMode(GL_MODELVIEW);
+
+    setShaderParameter("matrix.projection", m_ProjectionMatrix);
 }
 
 void PreviewWidget::paintGL()
 {
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    
+    glFrontFace(GL_CCW);
+    glEnable(GL_CULL_FACE);
+
     updateMesh();
     updateShader();
-    updateMaterial();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glColor3f(1.0f, 1.0f, 1.0f);
+    
+    glMatrixMode(GL_MODELVIEW);
+    glLoadMatrixf(value_ptr(m_ModelViewMatrix));
+
+    glPolygonMode(GL_FRONT_AND_BACK, ((m_Wireframe)? GL_LINE : GL_FILL));
+    activateShader((m_Unlit? m_UnlitSP : m_SP));
     if (m_Mesh)
     {
-        glPolygonMode(GL_FRONT_AND_BACK, m_Wireframe? GL_LINE : GL_FILL);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadMatrixf(value_ptr(m_ModelMatrix));
-
-        glUseProgram(m_Unlit? 0 : m_SP);
-        setupMaterial();
+        updateMaterialParameters(m_Unlit ? m_UnlitSP : m_SP);
         drawMesh();
     }
+    deactivateShader();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glUseProgram(0);
 
-    renderText({ 1, 11 }, QString("%2 %3").arg(m_Wireframe ? "Wireframe" : "Fill", m_Unlit ? "Unlit" : "Lit"), { 255, 255, 0, 255 });
+    renderText({ 1, 11 },
+               QString("%1 %2 %3").arg(m_SP != 0? "" : "[Invalid Shader]", m_Wireframe ? "Wireframe" : "Fill", m_Unlit ? "Unlit" : "Lit"),
+               { 255, 255, 0, 255 });
 }
 
 void PreviewWidget::renderText(const vec2& textPos, const QString& str, const vec4& color, const QFont& font)
 {
     QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(QColor(color.r, color.g, color.b, color.a));
     painter.setFont(font);
     painter.drawText(textPos.x, textPos.y, str);
-    //painter.end();
+    painter.end();
 }
 
 void PreviewWidget::updateMesh()
@@ -175,11 +221,31 @@ void PreviewWidget::updateMesh()
     }
 }
 
-void PreviewWidget::updateMaterial()
+void PreviewWidget::updateShader()
 {
+    if (m_buildShader)
+    {
+        QElapsedTimer timer;
+        timer.start();
+
+        GLuint newSP;
+        QString errorString;
+        if (buildShader(m_VS, m_FS, newSP, errorString))
+        {
+            LOG(QString("Compile Shader OK in %1 msecs").arg(timer.elapsed()));
+            std::swap(m_SP, newSP);
+        }
+        else
+        {
+            LOG(QString("Compile Shader FAILED in %1 msecs\n%2\n").arg(QString::number(timer.elapsed()), errorString));
+        }
+
+        glDeleteProgram(newSP);
+        m_buildShader = false;
+    }
 }
 
-void PreviewWidget::updateShader()
+bool PreviewWidget::buildShader(const QString& vs, const QString& fs, GLuint& outSP, QString& log)
 {
     const auto CheckError = [&](GLuint obj, bool isProgram, /* or shader */ QString& log)
     {
@@ -224,88 +290,96 @@ void PreviewWidget::updateShader()
         return (res == GL_TRUE);
     };
 
-
-    if (m_buildShader)
+    GLuint VS = glCreateShader(GL_VERTEX_SHADER);
     {
-        QElapsedTimer timer;
-        timer.start();
+        QByteArray tmpSource = vs.toLocal8Bit();
+        const GLchar* Source = tmpSource.constData();
+        glShaderSource(VS, 1, &Source, nullptr);
+        glCompileShader(VS);
+    }
+    CheckError(VS, false, log);
 
-        QString errorString;
-        GLuint VS = glCreateShader(GL_VERTEX_SHADER);
+    GLuint FS = glCreateShader(GL_FRAGMENT_SHADER);
+    {
+        QByteArray tmpSource = fs.toLocal8Bit();
+        const GLchar* Source = tmpSource.constData();
+        glShaderSource(FS, 1, &Source, nullptr);
+        glCompileShader(FS);
+    }
+    CheckError(FS, false, log);
+
+    GLuint newSP = glCreateProgram();
+    glAttachShader(newSP, VS);
+    glAttachShader(newSP, FS);
+    glLinkProgram(newSP);
+    
+    glDetachShader(newSP, VS);
+    glDetachShader(newSP, FS);
+    glDeleteShader(VS);
+    glDeleteShader(FS);
+
+    outSP = newSP;
+    return CheckError(newSP, true, log);
+}
+
+void PreviewWidget::updateMaterialParameters(GLuint program)
+{
+    if (m_uploadMaterialParams)
+    {
+        for (auto it = intParams.constBegin(); it != intParams.constEnd(); ++it)
         {
-            QByteArray tmpSource = m_VS.toLocal8Bit();
-            const GLchar* Source = tmpSource.constData();
-            glShaderSource(VS, 1, &Source, nullptr);
-            glCompileShader(VS);
+            glUniform1i(glGetUniformLocation(program, qPrintable(it.key())), it.value());
         }
-        CheckError(VS, false, errorString);
 
-        GLuint FS = glCreateShader(GL_FRAGMENT_SHADER);
+        for (auto it = floatParams.constBegin(); it != floatParams.constEnd(); ++it)
         {
-            QByteArray tmpSource = m_FS.toLocal8Bit();
-            const GLchar* Source = tmpSource.constData();
-            glShaderSource(FS, 1, &Source, nullptr);
-            glCompileShader(FS);
+            glUniform1f(glGetUniformLocation(program, qPrintable(it.key())), it.value());
         }
-        CheckError(FS, false, errorString);
 
-        GLuint newSP = glCreateProgram();
-        glAttachShader(newSP, VS);
-        glAttachShader(newSP, FS);
-        glLinkProgram(newSP);
-
-        glDetachShader(newSP, VS);
-        glDetachShader(newSP, FS);
-        glDeleteShader(VS);
-        glDeleteShader(FS);
-
-        QString compileLog("Compiling Shader... ");
-        if (CheckError(newSP, true, errorString))
+        for (auto it = vec2Params.constBegin(); it != vec2Params.constEnd(); ++it)
         {
-            compileLog += QString("OK in %1 msecs").arg(timer.elapsed());
-            std::swap(m_SP, newSP);
+            glUniform2fv(glGetUniformLocation(program, qPrintable(it.key())), 1, value_ptr(it.value()));
         }
-        else
+
+        for (auto it = vec3Params.constBegin(); it != vec3Params.constEnd(); ++it)
         {
-            compileLog += QString("FAILED in %1 msecs\n%2\n").arg(QString::number(timer.elapsed()), errorString);
+            glUniform3fv(glGetUniformLocation(program, qPrintable(it.key())), 1, value_ptr(it.value()));
         }
-        LOG(compileLog);
 
-        glDeleteProgram(newSP);
+        for (auto it = vec4Params.constBegin(); it != vec4Params.constEnd(); ++it)
+        {
+            glUniform4fv(glGetUniformLocation(program, qPrintable(it.key())), 1, value_ptr(it.value()));
+        }
 
-        m_buildShader = false;
+        for (auto it = mat3Params.constBegin(); it != mat3Params.constEnd(); ++it)
+        {
+            glUniformMatrix3fv(glGetUniformLocation(program, qPrintable(it.key())), 1, GL_FALSE, value_ptr(it.value()));
+        }
+
+        for (auto it = mat4Params.constBegin(); it != mat4Params.constEnd(); ++it)
+        {
+            glUniformMatrix4fv(glGetUniformLocation(program, qPrintable(it.key())), 1, GL_FALSE, value_ptr(it.value()));
+        }
+
+        m_uploadMaterialParams = false;
     }
 }
 
-
-
-void PreviewWidget::setupMaterial()
+void PreviewWidget::activateShader(GLuint sp)
 {
-    // TODO: light should be adjustable
-    const vec4 light_position{ 2.f, 2.f, -1.f, .0f };
-    const vec4 white{ 1.f, 1.f, 1.f, 1.f };
-    glLightfv(GL_LIGHT0, GL_POSITION, value_ptr(light_position));
-    glLightfv(GL_LIGHT0, GL_AMBIENT, value_ptr(white));
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, value_ptr(white));
-    glLightfv(GL_LIGHT0, GL_SPECULAR, value_ptr(white));
-    glEnable(GL_LIGHT0);
-
-    const vec4 ambient{ 0.1f,  0.1f,  0.1f,  1.f };
-    const vec4 diffuse{ 0.2f,  0.3f,  0.9f,  1.f };
-    const vec4 specular{ 0.9f,  0.9f,  0.9f,  1.f };
-    const vec4 emission{ .0f,   .0f,   .0f,  1.f };
-    const float shininess = 12;
-    glMaterialfv(GL_FRONT, GL_AMBIENT, value_ptr(ambient));
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, value_ptr(diffuse));
-    glMaterialfv(GL_FRONT, GL_SPECULAR, value_ptr(specular));
-    glMaterialfv(GL_FRONT, GL_EMISSION, value_ptr(emission));
-    glMaterialf(GL_FRONT, GL_SHININESS, shininess);
-    glEnable(GL_COLOR_MATERIAL);
-
-    for (auto& uniform : Uniforms)
+    static GLuint lastsp = sp;
+    if (lastsp != sp)
     {
-        //SetUniform(uniform.value);
+        m_uploadMaterialParams = true;
+        lastsp = sp;
     }
+
+    glUseProgram(sp);
+}
+
+void PreviewWidget::deactivateShader()
+{
+    glUseProgram(0);
 }
 
 void PreviewWidget::drawMesh()

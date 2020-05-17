@@ -36,84 +36,86 @@ Mesh* Mesh::Load(MeshType Shape)
     {
     case CUBE:
     {
-        const vec3 front[] = {
-            vec3{ -1.0f, -1.0f, 1.0f },
-            vec3{ 1.0f, -1.0f, 1.0f },
-            vec3{ 1.0f,  1.0f, 1.0f },
-            vec3{ -1.0f, 1.0f, 1.0f }
+        const vec3 top(.5f, .5f, .5f);
+        const vec3 bottom(-.5f, -.5f, -.5f);
+
+        const vec3 vertices[] = {
+            { top.x,    top.y,    bottom.z },
+            { top.x,    bottom.y, bottom.z },
+            { top.x,    top.y,    top.z    },
+            { top.x,    bottom.y, top.z    },
+            { bottom.x, top.y,    bottom.z },
+            { bottom.x, bottom.y, bottom.z },
+            { bottom.x, top.y,    top.z    },
+            { bottom.x, bottom.y, top.z    }
         };
 
-        const vec3 back[] = {
-            vec3{ -1.0f, -1.0f, -1.0f },
-            vec3{ -1.0f,  1.0f, -1.0f },
-            vec3{ 1.0f, 1.0f, -1.0f },
-            vec3{ 1.0f, -1.0f, -1.0f }
-        };
-
-        const vec2 uv[] = {
-            vec2{ 0.0f, 0.0f },
-            vec2{ 1.0f, 0.0f },
-            vec2{ 1.0f, 1.0f },
-            vec2{ 0.0f, 1.0f }
-        };
+        //
+        // TODO: set UVs
+        //
+        //const vec2 uv[] = {
+        //	vec2{ 0.0f, 0.0f },
+        //	vec2{ 1.0f, 0.0f },
+        //	vec2{ 1.0f, 1.0f },
+        //	vec2{ 0.0f, 1.0f }
+        //};
 
         const vec3 normals[] = {
-            vec3{ 0.0f, 0.0f, 1.0f },    // front
-            vec3{ 0.0f, 0.0f, -1.0f },   // back
-            vec3{ 0.0f, 1.0f, 0.0f },    // top
-            vec3{ 0.0f, -1.0f, 0.0f },   // bottom
-            vec3{ 1.0f, 0.0f, 0.0f },    // right
-            vec3{ -1.0f, 0.0f, 0.0f }    // left
+            vec3{  0.0f,  1.0f,  0.0f },
+            vec3{  0.0f,  0.0f,  1.0f },
+            vec3{ -1.0f,  0.0f,  0.0f },
+            vec3{  0.0f, -1.0f,  0.0f },
+            vec3{  1.0f,  0.0f,  0.0f },
+            vec3{  0.0f,  0.0f, -1.0f }
         };
-        
-        // front
-        m_Vertices.push_back({ front[0], normals[0], uv[0], vec3(.0), vec3(.0) }); // 0
-        m_Vertices.push_back({ front[1], normals[0], uv[1], vec3(.0), vec3(.0) }); // 1
-        m_Vertices.push_back({ front[2], normals[0], uv[2], vec3(.0), vec3(.0) }); // 2
-        m_Vertices.push_back({ front[3], normals[0], uv[3], vec3(.0), vec3(.0) }); // 3
-        m_Indices.push_back(0); m_Indices.push_back(1); m_Indices.push_back(3);
-        m_Indices.push_back(3); m_Indices.push_back(1); m_Indices.push_back(2);
 
-        // back
-        m_Vertices.push_back({ back[0], normals[1], uv[1], vec3(.0), vec3(.0) }); // 4
-        m_Vertices.push_back({ back[1], normals[1], uv[2], vec3(.0), vec3(.0) }); // 5
-        m_Vertices.push_back({ back[2], normals[1], uv[3], vec3(.0), vec3(.0) }); // 6
-        m_Vertices.push_back({ back[3], normals[1], uv[0], vec3(.0), vec3(.0) }); // 7
-        m_Indices.push_back(4); m_Indices.push_back(7); m_Indices.push_back(5);
-        m_Indices.push_back(5); m_Indices.push_back(7); m_Indices.push_back(6);
+        m_Vertices.push_back({ vertices[4], normals[0], vec2(.0f), vec3(.0f), vec3(.0f)}); // 0
+        m_Vertices.push_back({ vertices[2], normals[0], vec2(.0f), vec3(.0f), vec3(.0f)}); // 1
+        m_Vertices.push_back({ vertices[0], normals[0], vec2(.0f), vec3(.0f), vec3(.0f)}); // 2
+        m_Indices.push_back(0); m_Indices.push_back(1); m_Indices.push_back(2);
 
-        // top
-        m_Vertices.push_back({ back[1],  normals[2], uv[3], vec3(.0), vec3(.0) }); // 8
-        m_Vertices.push_back({ front[3], normals[2], uv[0], vec3(.0), vec3(.0) }); // 9
-        m_Vertices.push_back({ front[2], normals[2], uv[1], vec3(.0), vec3(.0) }); // 10
-        m_Vertices.push_back({ back[2],  normals[2], uv[2], vec3(.0), vec3(.0) }); // 11
-        m_Indices.push_back(8); m_Indices.push_back(9); m_Indices.push_back(10);
-        m_Indices.push_back(10); m_Indices.push_back(11); m_Indices.push_back(8);
+        m_Vertices.push_back({ vertices[2], normals[1], vec2(.0f), vec3(.0f), vec3(.0f) }); // 3
+        m_Vertices.push_back({ vertices[7], normals[1], vec2(.0f), vec3(.0f), vec3(.0f) }); // 4
+        m_Vertices.push_back({ vertices[3], normals[1], vec2(.0f), vec3(.0f), vec3(.0f) }); // 5
+        m_Indices.push_back(3); m_Indices.push_back(4); m_Indices.push_back(5);
 
-        // bottom
-        m_Vertices.push_back({ back[0],  normals[3], uv[3], vec3(.0), vec3(.0) }); // 12
-        m_Vertices.push_back({ front[0], normals[3], uv[2], vec3(.0), vec3(.0) }); // 13
-        m_Vertices.push_back({ front[1], normals[3], uv[0], vec3(.0), vec3(.0) }); // 14
-        m_Vertices.push_back({ back[3],  normals[3], uv[1], vec3(.0), vec3(.0) }); // 15
+        m_Vertices.push_back({ vertices[6], normals[2], vec2(.0f), vec3(.0f), vec3(.0f) }); // 6
+        m_Vertices.push_back({ vertices[5], normals[2], vec2(.0f), vec3(.0f), vec3(.0f) }); // 7
+        m_Vertices.push_back({ vertices[7], normals[2], vec2(.0f), vec3(.0f), vec3(.0f) }); // 8
+        m_Indices.push_back(6); m_Indices.push_back(7); m_Indices.push_back(8);
+
+        m_Vertices.push_back({ vertices[1], normals[3], vec2(.0f), vec3(.0f), vec3(.0f) }); // 9
+        m_Vertices.push_back({ vertices[7], normals[3], vec2(.0f), vec3(.0f), vec3(.0f) }); // 10
+        m_Vertices.push_back({ vertices[5], normals[3], vec2(.0f), vec3(.0f), vec3(.0f) }); // 11
+        m_Indices.push_back(9); m_Indices.push_back(10); m_Indices.push_back(11);
+
+        m_Vertices.push_back({ vertices[0], normals[4], vec2(.0f), vec3(.0f), vec3(.0f) }); // 12
+        m_Vertices.push_back({ vertices[3], normals[4], vec2(.0f), vec3(.0f), vec3(.0f) }); // 13
+        m_Vertices.push_back({ vertices[1], normals[4], vec2(.0f), vec3(.0f), vec3(.0f) }); // 14
         m_Indices.push_back(12); m_Indices.push_back(13); m_Indices.push_back(14);
-        m_Indices.push_back(14); m_Indices.push_back(15); m_Indices.push_back(12);
 
-        // right
-        m_Vertices.push_back({ back[2],  normals[4], uv[1], vec3(.0), vec3(.0) }); // 16
-        m_Vertices.push_back({ front[1], normals[4], uv[2], vec3(.0), vec3(.0) }); // 17
-        m_Vertices.push_back({ front[2], normals[4], uv[3], vec3(.0), vec3(.0) }); // 18
-        m_Vertices.push_back({ back[3],  normals[4], uv[0], vec3(.0), vec3(.0) }); // 19
-        m_Indices.push_back(17); m_Indices.push_back(19); m_Indices.push_back(18);
-        m_Indices.push_back(18); m_Indices.push_back(16); m_Indices.push_back(19);
+        m_Vertices.push_back({ vertices[4], normals[5], vec2(.0f), vec3(.0f), vec3(.0f) }); // 15
+        m_Vertices.push_back({ vertices[1], normals[5], vec2(.0f), vec3(.0f), vec3(.0f) }); // 16
+        m_Vertices.push_back({ vertices[5], normals[5], vec2(.0f), vec3(.0f), vec3(.0f) }); // 17
+        m_Indices.push_back(15); m_Indices.push_back(16); m_Indices.push_back(17);
 
-        // left
-        m_Vertices.push_back({ back[0],  normals[5], uv[0], vec3(.0), vec3(.0) }); // 20
-        m_Vertices.push_back({ front[0], normals[5], uv[1], vec3(.0), vec3(.0) }); // 21
-        m_Vertices.push_back({ front[3], normals[5], uv[2], vec3(.0), vec3(.0) }); // 22
-        m_Vertices.push_back({ back[1],  normals[5], uv[3], vec3(.0), vec3(.0) }); // 23
-        m_Indices.push_back(21); m_Indices.push_back(20); m_Indices.push_back(23);
-        m_Indices.push_back(23); m_Indices.push_back(22); m_Indices.push_back(21);
+        m_Vertices.push_back({ vertices[6], normals[0], vec2(.0f), vec3(.0f), vec3(.0f) }); // 18
+        m_Indices.push_back(0); m_Indices.push_back(18); m_Indices.push_back(1);
 
+        m_Vertices.push_back({ vertices[6], normals[1], vec2(.0f), vec3(.0f), vec3(.0f) }); // 19
+        m_Indices.push_back(3); m_Indices.push_back(19); m_Indices.push_back(4);
+
+        m_Vertices.push_back({ vertices[4], normals[2], vec2(.0f), vec3(.0f), vec3(.0f) }); // 20
+        m_Indices.push_back(6); m_Indices.push_back(20); m_Indices.push_back(7);
+
+        m_Vertices.push_back({ vertices[3], normals[3], vec2(.0f), vec3(.0f), vec3(.0f) }); // 21
+        m_Indices.push_back(9); m_Indices.push_back(21); m_Indices.push_back(10);
+
+        m_Vertices.push_back({ vertices[2], normals[4], vec2(.0f), vec3(.0f), vec3(.0f) }); // 22
+        m_Indices.push_back(12); m_Indices.push_back(22); m_Indices.push_back(13);
+
+        m_Vertices.push_back({ vertices[0], normals[5], vec2(.0f), vec3(.0f), vec3(.0f) }); // 23
+        m_Indices.push_back(15); m_Indices.push_back(23); m_Indices.push_back(16);
         break;
     }
 
@@ -331,11 +333,11 @@ void Mesh::ComputeTangentsAndBitangents()
         v1.tangent = normalize(tangent - v1.normal * dot(v1.normal, tangent));
         v2.tangent = normalize(tangent - v2.normal * dot(v2.normal, tangent));
         v3.tangent = normalize(tangent - v3.normal * dot(v3.normal, tangent));
-
+        
         // account for wrong handedness
-        v1.tangent *= (dot(cross(v1.normal, v1.tangent), v1.bitangent) < 0.0f) ? -1.0f : 1.0f;
-        v2.tangent *= (dot(cross(v2.normal, v2.tangent), v2.bitangent) < 0.0f) ? -1.0f : 1.0f;
-        v3.tangent *= (dot(cross(v3.normal, v3.tangent), v3.bitangent) < 0.0f) ? -1.0f : 1.0f;
+        v1.bitangent = cross(v1.normal, v1.tangent) * ((dot(cross(v1.normal, v1.tangent), v1.bitangent) < 0.0f) ? -1.0f : 1.0f);
+        v2.bitangent = cross(v2.normal, v2.tangent) * ((dot(cross(v2.normal, v2.tangent), v2.bitangent) < 0.0f) ? -1.0f : 1.0f);
+        v3.bitangent = cross(v3.normal, v3.tangent) * ((dot(cross(v3.normal, v3.tangent), v3.bitangent) < 0.0f) ? -1.0f : 1.0f);
     }
 }
 

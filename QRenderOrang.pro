@@ -8,13 +8,11 @@ HEADERS            += include/Common.h             \
                       include/MainWidget.h         \
                       include/PreviewWidget.h      \
                       include/Mesh.h               \
-                      include/Uniform.h            \
                       include/SyntaxHighlighter.h
 
 SOURCES            += src/MainWidget.cpp         \
                       src/PreviewWidget.cpp      \
                       src/Mesh.cpp               \
-                      src/Uniform.cpp            \
                       src/SyntaxHighlighter.cpp  \
                       src/main.cpp
 
