@@ -23,6 +23,7 @@
  ****************************************************************************/
 #include "MainWidget.h"
 #include "SyntaxHighlighter.h"
+#include "UniformWidget.h"
 #include <QElapsedTimer>
 
 MainWidget::MainWidget(QWidget* parent)
@@ -52,6 +53,9 @@ MainWidget::MainWidget(QWidget* parent)
     // compile default shader
     loadBuiltinMesh(Mesh::SPHERE);
     compileShader();
+
+    // ensure equal size btw editor/uniforms/GL
+    ui.splitter->setSizes({ 1000, 1000, 1000 });
 }
 
 void MainWidget::setupGLPreview()
@@ -89,7 +93,10 @@ void MainWidget::setupActions()
     // Menu
     connect(ui.action_Open,       SIGNAL(triggered()), this, SLOT(loadFile()));
     connect(ui.action_Quit,       SIGNAL(triggered()), this, SLOT(close()));
+    
     connect(ui.action_Compile,    SIGNAL(triggered()), this, SLOT(compileShader()));
+    connect(ui.actionAdd_Uniform, SIGNAL(triggered()), this, SLOT(addUniform()));
+    
     connect(ui.action_Qt,         SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     connect(ui.action_QRO,        SIGNAL(triggered()), this, SLOT(about()));
 
@@ -99,6 +106,19 @@ void MainWidget::setupActions()
 
     connect(ui.actionWireframe,   &QAction::triggered, this, [this]{ ui.actionWireframe->setChecked(glWidget->toggleWireframe()); });
     connect(ui.actionUnlit,       &QAction::triggered, this, [this]{ ui.actionUnlit->setChecked(glWidget->toggleUnlit()); });
+}
+
+void MainWidget::addUniform()
+{
+    auto newUniform = new UniformWidget(glWidget);
+    ui.uniformList->widget()->layout()->addWidget(newUniform);
+    connect(newUniform, &UniformWidget::deleted, this, &MainWidget::removeUniform);
+}
+
+void MainWidget::removeUniform(UniformWidget* target)
+{
+    ui.uniformList->widget()->layout()->removeWidget(target);
+    delete target;
 }
 
 void MainWidget::loadBuiltinMesh(Mesh::MeshType type)

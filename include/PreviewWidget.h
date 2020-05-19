@@ -47,14 +47,16 @@ public:
     
     template<typename T>
     void setShaderParameter(QHash<QString, T>& container, const QString& parameter, const T& value, bool remove);
-
-    void setShaderParameter(const QString& parameter, int value, bool remove = false);
+    void setShaderParameter(const QString& parameter, GLuint value, bool remove = false);
     void setShaderParameter(const QString& parameter, float value, bool remove = false);
     void setShaderParameter(const QString& parameter, const vec2& value, bool remove = false);
     void setShaderParameter(const QString& parameter, const vec3& value, bool remove = false);
     void setShaderParameter(const QString& parameter, const vec4& value, bool remove = false);
     void setShaderParameter(const QString& parameter, const mat3& value, bool remove = false);
     void setShaderParameter(const QString& parameter, const mat4& value, bool remove = false);
+    
+    void setShaderResource(const QString& parameter, const char* pixels, int width, int height, int bpp = 4, bool sRGB = true);
+    void deleteShaderResource(const QString& parameter);
 
 protected:
     virtual void initializeGL() override;
@@ -75,6 +77,7 @@ private:
     void drawMesh();
     void updateMesh();
     void updateShader();
+    void updateResources();
     bool buildShader(const QString& vs, const QString& fs, GLuint& outSP, QString& log);
     void resetTransforms();
     void updateMatrices();
@@ -99,7 +102,7 @@ private:
     GLuint m_VAO;
 
     bool m_uploadMaterialParams = false;
-    QHash<QString, int> intParams;
+    QHash<QString, GLuint> textureParams;
     QHash<QString, float> floatParams;
     QHash<QString, vec2> vec2Params;
     QHash<QString, vec3> vec3Params;
@@ -112,6 +115,17 @@ private:
     QString m_FS;
     GLuint m_SP = 0;
     GLuint m_UnlitSP = 0;
+
+    struct TextureRequest
+    {
+        QString textureName;
+        vec2 textureSize;
+        bool textureSRGB;
+        QByteArray textureData;
+
+        bool remove;
+    };
+    QVector<TextureRequest> m_textureRequests;
 };
 
 
@@ -165,9 +179,36 @@ inline bool PreviewWidget::unlit() const
     return m_Unlit;
 }
 
-inline void PreviewWidget::setShaderParameter(const QString& parameter, int value, bool remove)
+inline void PreviewWidget::setShaderResource(const QString& parameter, const char* pixels, int width, int height, int bpp, bool sRGB)
 {
-    setShaderParameter(intParams, parameter, value, remove);
+    if (!parameter.isEmpty() && pixels && width > 0 && height > 0)
+    {
+        TextureRequest request;
+        request.textureName = parameter;
+        request.textureSize.x = width;
+        request.textureSize.y = height;
+        request.textureData = QByteArray(pixels, width * height * bpp);
+        request.textureSRGB = sRGB;
+        request.remove = false;
+        m_textureRequests.push_back(request);
+
+        update();
+    }
+}
+
+inline void PreviewWidget::deleteShaderResource(const QString& parameter)
+{
+    if (textureParams.contains(parameter))
+    {
+        m_textureRequests.push_back({ parameter, vec2(), false, QByteArray(), true });
+        
+        update();
+    }
+}
+
+inline void PreviewWidget::setShaderParameter(const QString& parameter, GLuint value, bool remove)
+{
+    setShaderParameter(textureParams, parameter, value, remove);
 }
 
 inline void PreviewWidget::setShaderParameter(const QString& parameter, float value, bool remove)
@@ -203,7 +244,7 @@ inline void PreviewWidget::setShaderParameter(const QString& parameter, const ma
 template<typename T>
 inline void PreviewWidget::setShaderParameter(QHash<QString, T>& container, const QString& parameter, const T& value, bool remove)
 {
-    if (!container.contains(parameter) || container.value(parameter) != value || remove)
+    if (!parameter.isEmpty() && (!container.contains(parameter) || container.value(parameter) != value || remove))
     {
         if (remove)
         {
@@ -215,5 +256,6 @@ inline void PreviewWidget::setShaderParameter(QHash<QString, T>& container, cons
         }
 
         m_uploadMaterialParams = true;
+        update();
     }
 }

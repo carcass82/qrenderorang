@@ -44,6 +44,8 @@ using cc::math::scale;
 using cc::math::perspective;
 using cc::math::lookAt;
 using cc::math::value_ptr;
+using cc::gfx::srgb;
+using cc::gfx::linear;
 
 //
 //

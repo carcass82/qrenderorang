@@ -72,6 +72,8 @@ void PreviewWidget::initializeGL()
 {
     initializeOpenGLFunctions();
 
+    glEnable(GL_FRAMEBUFFER_SRGB);
+
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClearDepth(1.0f);
     glEnable(GL_DEPTH_TEST);
@@ -98,7 +100,7 @@ void PreviewWidget::initializeGL()
     QString log;
     if (!buildShader(unlitVS, unlitFS, m_UnlitSP, log))
     {
-        qDebug() << "Unlit Shader compile FAILED: " << log;
+        LOG(QString("Unlit Shader compilation FAILED: %1").arg(log));
     }
 
     m_Initialized = true;
@@ -124,8 +126,12 @@ void PreviewWidget::paintGL()
     glFrontFace(GL_CCW);
     glEnable(GL_CULL_FACE);
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     updateMesh();
     updateShader();
+    updateResources();
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -311,13 +317,54 @@ bool PreviewWidget::buildShader(const QString& vs, const QString& fs, GLuint& ou
     return CheckError(newSP, true, log);
 }
 
+void PreviewWidget::updateResources()
+{
+    for (auto& request : m_textureRequests)
+    {
+        if (request.remove || textureParams.contains(request.textureName))
+        {
+            glDeleteTextures(1, &textureParams[request.textureName]);
+        }
+
+        GLuint newTexture;
+
+        glGenTextures(1, &newTexture);
+        glBindTexture(GL_TEXTURE_2D, newTexture);
+
+        glTexImage2D(GL_TEXTURE_2D,
+                     0,
+                     (request.textureSRGB? GL_SRGB_ALPHA : GL_RGBA),
+                     request.textureSize.x,
+                     request.textureSize.y,
+                     0,
+                     GL_RGBA,
+                     GL_UNSIGNED_BYTE,
+                     request.textureData.constData());
+
+        glGenerateMipmap(GL_TEXTURE_2D);
+        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        setShaderParameter(request.textureName, newTexture);
+    }
+
+    m_textureRequests.clear();
+}
+
 void PreviewWidget::updateMaterialParameters(GLuint program)
 {
     if (m_uploadMaterialParams)
     {
-        for (auto it = intParams.constBegin(); it != intParams.constEnd(); ++it)
+        int texUnit = 0;
+        for (auto it = textureParams.constBegin(); it != textureParams.constEnd(); ++it)
         {
-            glUniform1i(glGetUniformLocation(program, qPrintable(it.key())), it.value());
+            glActiveTexture(GL_TEXTURE0 + texUnit);
+            glBindTexture(GL_TEXTURE_2D, it.value());
+
+            glUniform1i(glGetUniformLocation(program, qPrintable(it.key())), texUnit);
         }
 
         for (auto it = floatParams.constBegin(); it != floatParams.constEnd(); ++it)

@@ -22,44 +22,53 @@
  *                                                                          *
  ****************************************************************************/
 #pragma once
-#include <QMainWindow>
-#include <QMessageBox>
+#include <QColorDialog>
 #include <QFileDialog>
-#include <QDate>
 
+#include "Common.h"
 #include "PreviewWidget.h"
-#include "Mesh.h"
-#include "ui_qrenderorang.h"
 
-class GLSLSyntaxHlighter;
-class UniformWidget;
+#include "ui_uniform.h"
 
-class MainWidget : public QMainWindow
+class UniformWidget : public QWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	MainWidget(QWidget *parent = 0);
+    enum Type { Float, Vec2, Vec3, Vec4, Mat3, Mat4, Color, Texture, Count };
 
-public slots:
-	void loadFile();
-	void about();
-	void compileShader();
-    void loadBuiltinMesh(Mesh::MeshType type);
-    void loadMesh();
-    void addUniform();
-    void removeUniform(UniformWidget* target);
+    UniformWidget(const QString& name, Type type, PreviewWidget* glWidget, QWidget* parent = nullptr);
+    
+	UniformWidget(PreviewWidget* glWidget)
+        : UniformWidget("", Float, glWidget)
+    {}
+
+    ~UniformWidget();
+
+signals:
+    void deleted(UniformWidget* me);
 
 private:
-	void setupActions();
-	void setupGLPreview();
-	void setupEditor();
+    void resetUI();
+    void updateUI();
 
-	QString fileProjectName;
-	Ui::QRenderOrangGUI ui;
-    QTextEdit* m_textVert;
-    QTextEdit* m_textFrag;
-	PreviewWidget* glWidget;
-    GLSLSyntaxHlighter* m_textVertHL;
-    GLSLSyntaxHlighter* m_textFragHL;
+    void resetShaderValue();
+    void updateShaderValue();
+
+    void updateNameAndType();
+
+    void chooseColor();
+    void chooseTexture();
+
+
+    Ui::UniformWidget ui;
+    QString uniformName;
+    Type uniformType = Count;
+    QByteArray uniformTextureData;
+    PreviewWidget* GLWidget;
+    
+    QVector<QWidget*> Row0;
+    QVector<QWidget*> Row1;
+    QVector<QWidget*> Row2;
+    QVector<QWidget*> Row3;
 };
