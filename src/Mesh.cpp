@@ -219,6 +219,10 @@ Mesh* Mesh::Load(MeshType Shape)
         
         break;
     }
+
+    case CUSTOM:
+        return this;
+
     }
 
     ComputeBoundingBox();
@@ -236,6 +240,9 @@ Mesh* Mesh::Load(const QString& filePath)
 
     if (!filePath.isEmpty() && tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filePath.toStdString().c_str()))
     {
+        m_Type = CUSTOM;
+        m_Path = filePath;
+
         m_Vertices.clear();
         m_Indices.clear();
 

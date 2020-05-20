@@ -24,12 +24,13 @@
 #pragma once
 #include <QString>
 #include <QVector>
+#include <QJsonObject>
 #include "PreviewWidget.h"
 
 class Mesh
 {
 public:
-    enum MeshType { CUBE, SPHERE };
+    enum MeshType { CUBE, SPHERE, CUSTOM };
 
     Mesh* Load(MeshType Shape);
     Mesh* Load(const QString& filePath);
@@ -42,7 +43,9 @@ public:
     const vec3& center() const;
     const vec3& size() const;
 
-    static QString typeToString(Mesh::MeshType type);
+    QJsonObject save() const;
+
+    static QString typeToString(MeshType type);
 
 private:
     void ComputeNormals();
@@ -53,7 +56,20 @@ private:
     vec3 m_MeshSize;
     QVector<Vertex> m_Vertices;
     QVector<uint32_t> m_Indices;
+
+    MeshType m_Type;
+    QString m_Path;
 };
+
+inline QJsonObject Mesh::save() const
+{
+    QJsonObject mesh;
+
+    mesh["type"] = m_Type;
+    mesh["path"] = m_Path;
+
+    return mesh;
+}
 
 inline Vertex* Mesh::vertices()
 {
@@ -96,6 +112,7 @@ inline QString Mesh::typeToString(Mesh::MeshType type)
     {
     case MeshType::CUBE:   return "Cube (builtin)";
     case MeshType::SPHERE: return "Sphere (builtin)";
+    case MeshType::CUSTOM: return "Custom";
     default:               return "";
     }
 }

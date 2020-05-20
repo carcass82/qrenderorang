@@ -25,6 +25,9 @@
 #include "SyntaxHighlighter.h"
 #include "UniformWidget.h"
 #include <QElapsedTimer>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonDocument>
 
 MainWidget::MainWidget(QWidget* parent)
 	: QMainWindow(parent)
@@ -73,14 +76,46 @@ void MainWidget::setupGLPreview()
 	((QGridLayout*)ui.frameGLPreview->layout())->addWidget(glWidget);
 }
 
-void MainWidget::loadFile()
+void MainWidget::loadProject()
 {
     fileProjectName = QFileDialog::getOpenFileName(this,
                                                    tr("Load Project"),
-                                                   QDir::currentPath(),
+                                                   "",
                                                    tr("QRenderOrang Project (*.qrfx)"));
 
     // #TODO: add support for project files
+}
+
+void MainWidget::saveProject()
+{
+    auto projectFileName = fileProjectName.isEmpty()? QFileDialog::getSaveFileName(this,
+                                                                                   tr("Save Project"),
+                                                                                   "",
+                                                                                   tr("QRenderOrang Project (*.qrfx)"))
+                                                    : fileProjectName;
+
+    QFile file(projectFileName);
+    if (!projectFileName.isEmpty() && file.open(QIODevice::WriteOnly))
+    {
+        QJsonObject projectData;
+
+        projectData["version"] = "1";
+        projectData["mesh"] = glWidget->mesh()->save();
+        projectData["vs"] = m_textVert->toPlainText();
+        projectData["fs"] = m_textFrag->toPlainText();
+
+        QJsonArray activeUniforms;
+        for (auto child : ui.uniformList->widget()->children())
+        {
+            if (auto uniform = qobject_cast<UniformWidget*>(child))
+            {
+                activeUniforms.append(uniform->save());
+            }
+        }
+        projectData["uniforms"] = activeUniforms;
+
+        file.write(QJsonDocument(projectData).toJson());
+    }
 }
 
 void MainWidget::compileShader()
@@ -91,7 +126,8 @@ void MainWidget::compileShader()
 void MainWidget::setupActions()
 {
     // Menu
-    connect(ui.action_Open,       SIGNAL(triggered()), this, SLOT(loadFile()));
+    connect(ui.action_Open,       SIGNAL(triggered()), this, SLOT(loadProject()));
+    connect(ui.action_Save,       SIGNAL(triggered()), this, SLOT(saveProject()));
     connect(ui.action_Quit,       SIGNAL(triggered()), this, SLOT(close()));
     
     connect(ui.action_Compile,    SIGNAL(triggered()), this, SLOT(compileShader()));

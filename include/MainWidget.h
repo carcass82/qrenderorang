@@ -42,7 +42,8 @@ public:
 	MainWidget(QWidget *parent = 0);
 
 public slots:
-	void loadFile();
+	void loadProject();
+    void saveProject();
 	void about();
 	void compileShader();
     void loadBuiltinMesh(Mesh::MeshType type);

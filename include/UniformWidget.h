@@ -24,6 +24,7 @@
 #pragma once
 #include <QColorDialog>
 #include <QFileDialog>
+#include <QJsonObject>
 
 #include "Common.h"
 #include "PreviewWidget.h"
@@ -44,6 +45,8 @@ public:
     {}
 
     ~UniformWidget();
+
+    QJsonObject save() const;
 
 signals:
     void deleted(UniformWidget* me);

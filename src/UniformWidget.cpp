@@ -43,18 +43,18 @@ UniformWidget::UniformWidget(const QString& name, Type type, PreviewWidget* glWi
 	ui.uniformName->setText(name);
 	ui.uniformType->setCurrentIndex(type);
 
-	connect(ui.uniformName, &QLineEdit::returnPressed,                        this, [&]()          { updateNameAndType(); });
-	connect(ui.uniformType, qOverload<int>(&QComboBox::currentIndexChanged),  this, [&](int)       { updateNameAndType(); });
-	connect(ui.uniformX0,   qOverload<double>(&QDoubleSpinBox::valueChanged), this, [&](double)    { updateShaderValue(); });
-	connect(ui.uniformY0,   qOverload<double>(&QDoubleSpinBox::valueChanged), this, [&](double)    { updateShaderValue(); });
-	connect(ui.uniformZ0,   qOverload<double>(&QDoubleSpinBox::valueChanged), this, [&](double)    { updateShaderValue(); });
-	connect(ui.uniformW0,   qOverload<double>(&QDoubleSpinBox::valueChanged), this, [&](double)    { updateShaderValue(); });
-	connect(ui.uniformColorPreview,           &QLabel::linkActivated,         this, [&]()          { chooseColor(); });
-	connect(ui.uniformColorSRGB,              &QCheckBox::clicked,            this, [&]()          { updateShaderValue(); });
-	connect(ui.uniformTextureOpen,            &QPushButton::clicked,          this, [&]()          { chooseTexture(); });
-	connect(ui.uniformTextureSRGB,            &QCheckBox::clicked,            this, [&]()          { updateShaderValue(); });
-	connect(ui.deleteButton,                  &QPushButton::clicked,          this, [&]()          { emit deleted(this); });
-	connect(GLWidget,                         &QWidget::destroyed,            this, [&]()          { GLWidget = nullptr; });
+	connect(ui.uniformName,                           &QLineEdit::editingFinished,       this, [&]()          { updateNameAndType(); });
+	connect(ui.uniformType,            qOverload<int>(&QComboBox::currentIndexChanged),  this, [&](int)       { updateNameAndType(); });
+	connect(ui.uniformX0,           qOverload<double>(&QDoubleSpinBox::valueChanged),    this, [&](double)    { updateShaderValue(); });
+	connect(ui.uniformY0,           qOverload<double>(&QDoubleSpinBox::valueChanged),    this, [&](double)    { updateShaderValue(); });
+	connect(ui.uniformZ0,           qOverload<double>(&QDoubleSpinBox::valueChanged),    this, [&](double)    { updateShaderValue(); });
+	connect(ui.uniformW0,           qOverload<double>(&QDoubleSpinBox::valueChanged),    this, [&](double)    { updateShaderValue(); });
+	connect(ui.uniformColorPreview,                   &QLabel::linkActivated,            this, [&]()          { chooseColor(); });
+	connect(ui.uniformColorSRGB,                      &QCheckBox::clicked,               this, [&]()          { updateShaderValue(); });
+	connect(ui.uniformTextureOpen,                    &QPushButton::clicked,             this, [&]()          { chooseTexture(); });
+	connect(ui.uniformTextureSRGB,                    &QCheckBox::clicked,               this, [&]()          { updateShaderValue(); });
+	connect(ui.deleteButton,                          &QPushButton::clicked,             this, [&]()          { emit deleted(this); });
+	connect(GLWidget,                                 &QWidget::destroyed,               this, [&]()          { GLWidget = nullptr; });
 
 	updateUI();
 }
@@ -65,6 +65,86 @@ UniformWidget::~UniformWidget()
 	{
 		resetShaderValue();
 	}
+}
+
+QJsonObject UniformWidget::save() const
+{
+	QJsonObject uniform;
+	uniform["name"] = uniformName;
+	uniform["type"] = uniformType;
+
+	switch (uniformType)
+	{
+	case Float:
+		uniform["value"] = QString::number(ui.uniformX0->value());
+		break;
+	case Vec2:
+		uniform["value"] = QString("%1 %2").arg(QString::number(ui.uniformX0->value()),
+												QString::number(ui.uniformY0->value()));
+		break;
+	case Vec3:
+		uniform["value"] = QString("%1 %2 %3").arg(QString::number(ui.uniformX0->value()),
+												   QString::number(ui.uniformY0->value()),
+												   QString::number(ui.uniformZ0->value()));
+		break;
+	case Vec4:
+		uniform["value"] = QString("%1 %2 %3 %4").arg(QString::number(ui.uniformX0->value()),
+													  QString::number(ui.uniformY0->value()),
+													  QString::number(ui.uniformZ0->value()),
+													  QString::number(ui.uniformW0->value()));
+		break;
+	case Mat3:
+		uniform["value"] = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9").arg(QString::number(ui.uniformX0->value()),
+																	 QString::number(ui.uniformY0->value()),
+																	 QString::number(ui.uniformZ0->value()),
+
+																	 QString::number(ui.uniformX1->value()),
+																	 QString::number(ui.uniformY1->value()),
+																	 QString::number(ui.uniformZ1->value()),
+
+																	 QString::number(ui.uniformX2->value()),
+																	 QString::number(ui.uniformY2->value()),
+																	 QString::number(ui.uniformZ2->value()));
+
+		break;
+	case Mat4:
+		uniform["value"] = QString("%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16").arg(QString::number(ui.uniformX0->value()),
+																								 QString::number(ui.uniformY0->value()),
+																								 QString::number(ui.uniformZ0->value()),
+																								 QString::number(ui.uniformW0->value()),
+
+																								 QString::number(ui.uniformX1->value()),
+																								 QString::number(ui.uniformY1->value()),
+																								 QString::number(ui.uniformZ1->value()),
+																								 QString::number(ui.uniformW1->value()),
+
+																								 QString::number(ui.uniformX2->value()),
+																								 QString::number(ui.uniformY2->value()),
+																								 QString::number(ui.uniformZ2->value()),
+																								 QString::number(ui.uniformW2->value()),
+
+																								 QString::number(ui.uniformX3->value()),
+																								 QString::number(ui.uniformY3->value()),
+																								 QString::number(ui.uniformZ3->value()),
+																								 QString::number(ui.uniformW3->value()));
+		break;
+
+	case Color:
+	{
+		uniform["value"] = ui.uniformColorPreview->palette().background().color().name(QColor::HexArgb);
+		uniform["flags"] = ui.uniformColorSRGB->isChecked()? "sRGB" : "RGB";
+		break;
+	}
+
+	case Texture:
+	{
+		uniform["value"] = ui.uniformTexturePath->text();
+		uniform["flags"] = ui.uniformTextureSRGB->isChecked()? "sRGB" : "RGB";
+		break;
+	}
+	}
+
+	return uniform;
 }
 
 void UniformWidget::updateShaderValue()
