@@ -221,7 +221,7 @@ Mesh* Mesh::Load(MeshType Shape)
     }
 
     case CUSTOM:
-        return this;
+        return Load(m_Path);
 
     }
 
@@ -238,6 +238,7 @@ Mesh* Mesh::Load(const QString& filePath)
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
 
+    m_Type = MAX;
     if (!filePath.isEmpty() && tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filePath.toStdString().c_str()))
     {
         m_Type = CUSTOM;

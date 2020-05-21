@@ -30,7 +30,7 @@
 class Mesh
 {
 public:
-    enum MeshType { CUBE, SPHERE, CUSTOM };
+    enum MeshType { CUBE, SPHERE, CUSTOM, MAX };
 
     Mesh* Load(MeshType Shape);
     Mesh* Load(const QString& filePath);
@@ -44,7 +44,10 @@ public:
     const vec3& size() const;
 
     QJsonObject save() const;
+    void load(const QJsonObject& data);
 
+    bool valid() const;
+    MeshType type() const;
     static QString typeToString(MeshType type);
 
 private:
@@ -69,6 +72,27 @@ inline QJsonObject Mesh::save() const
     mesh["path"] = m_Path;
 
     return mesh;
+}
+
+inline void Mesh::load(const QJsonObject& data)
+{
+    if (data.contains("path") && data.contains("type"))
+    {
+        m_Path = data["path"].toString();
+        m_Type = (MeshType)(data["type"].toInt() < MeshType::MAX? data["type"].toInt() : 0);
+
+        Load(m_Type);
+    }
+}
+
+inline Mesh::MeshType Mesh::type() const
+{
+    return m_Type;
+}
+
+inline bool Mesh::valid() const
+{
+    return m_Type < MeshType::MAX;
 }
 
 inline Vertex* Mesh::vertices()

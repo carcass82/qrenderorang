@@ -42,19 +42,23 @@ public:
 	MainWidget(QWidget *parent = 0);
 
 public slots:
+	void newProject();
 	void loadProject();
-    void saveProject();
+	void saveProjectAs();
+	void saveProject();
 	void about();
 	void compileShader();
     void loadBuiltinMesh(Mesh::MeshType type);
     void loadMesh();
-    void addUniform();
+    UniformWidget* addUniform();
     void removeUniform(UniformWidget* target);
+	void removeAllUniforms();
 
 private:
 	void setupActions();
 	void setupGLPreview();
 	void setupEditor();
+	void updateWindowTitle();
 
 	QString fileProjectName;
 	Ui::QRenderOrangGUI ui;

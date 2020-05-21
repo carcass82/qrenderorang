@@ -53,9 +53,7 @@ MainWidget::MainWidget(QWidget* parent)
     Logger::get().setOutputWidget(ui.textCompileLog);
     LOG("MainWindow initialized");
 
-    // compile default shader
-    loadBuiltinMesh(Mesh::SPHERE);
-    compileShader();
+    newProject();
 
     // ensure equal size btw editor/uniforms/GL
     ui.splitter->setSizes({ 1000, 1000, 1000 });
@@ -68,12 +66,68 @@ void MainWidget::setupGLPreview()
     glFormat.setProfile(QSurfaceFormat::CompatibilityProfile);
     glFormat.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
     glFormat.setColorSpace(QSurfaceFormat::sRGBColorSpace);
+    glFormat.setSamples(4);
     
 	glWidget = new PreviewWidget(glFormat, this);
     glWidget->makeCurrent();
 
 	ui.frameGLPreview->setLayout(new QGridLayout());
 	((QGridLayout*)ui.frameGLPreview->layout())->addWidget(glWidget);
+}
+
+void MainWidget::updateWindowTitle()
+{
+    auto title = QString("QRenderOrang");
+    if (!fileProjectName.isEmpty())
+    {
+        title += " - " + fileProjectName;
+    }
+
+    setWindowTitle(title);
+}
+
+void MainWidget::newProject()
+{
+    fileProjectName.clear();
+    updateWindowTitle();
+
+    // load default shader in text editor
+
+    m_textVert->setText(R"vs(#version 330
+
+// available builtin vertex data and locations
+layout (location = 0) in vec3 position;
+//layout (location = 1) in vec3 normal;
+//layout (location = 2) in vec2 uv;
+//layout (location = 3) in vec3 tangent;
+//layout (location = 4) in vec3 bitangent;
+
+// available builtin matrices
+uniform struct
+{
+	//mat4 projection;
+	//mat4 view;
+	//mat4 model;
+    mat4 MVP;
+} matrix;
+
+void main()
+{
+	gl_Position = matrix.MVP * vec4(position, 1);
+})vs");
+
+    m_textFrag->setText(R"fs(#version 330
+
+out vec4 outColor;
+
+void main()
+{
+	outColor = vec4(1,1,1,1);
+})fs");
+
+    // compile default shader with default mesh
+    loadBuiltinMesh(Mesh::SPHERE);
+    compileShader();
 }
 
 void MainWidget::loadProject()
@@ -83,7 +137,67 @@ void MainWidget::loadProject()
                                                    "",
                                                    tr("QRenderOrang Project (*.qrfx)"));
 
-    // #TODO: add support for project files
+    if (!fileProjectName.isEmpty())
+    {
+        QFile file(fileProjectName);
+        if (file.open(QIODevice::ReadOnly))
+        {
+            QByteArray projectRawData = file.readAll();
+            QJsonDocument projectDocument(QJsonDocument::fromJson(projectRawData));
+            QJsonObject projectObject = projectDocument.object();
+
+            // #TODO check if save version number match - now there is no need to
+
+            m_textVert->clear();
+            if (projectObject.contains("vs"))
+            {
+                m_textVert->setPlainText(projectObject["vs"].toString());
+            }
+            
+            m_textFrag->clear();
+            if (projectObject.contains("fs"))
+            {
+                m_textFrag->setPlainText(projectObject["fs"].toString());
+            }
+
+            if (projectObject.contains("mesh"))
+            {
+                Mesh* newMesh = new Mesh();
+                newMesh->load(projectObject["mesh"].toObject());
+                glWidget->setMesh(newMesh);
+            }
+
+            removeAllUniforms();
+            if (projectObject.contains("uniforms") && projectObject["uniforms"].isArray())
+            {
+                for (auto uniform : projectObject["uniforms"].toArray())
+                {
+                    auto newUniform = addUniform();
+                    newUniform->load(uniform.toObject());
+                }
+            }
+
+            compileShader();
+
+            auto projectName = QFileInfo(fileProjectName).fileName();
+            LOG(QString("Loaded project %1").arg(projectName));
+            updateWindowTitle();
+        }
+    }
+}
+
+void MainWidget::saveProjectAs()
+{
+    if (!fileProjectName.isEmpty())
+    {
+        auto projectFileName = QFileDialog::getSaveFileName(this, tr("Save Project"), "", tr("QRenderOrang Project (*.qrfx)"));
+        if (!projectFileName.isEmpty())
+        {
+            fileProjectName = projectFileName;
+        }
+    }
+    
+    saveProject();
 }
 
 void MainWidget::saveProject()
@@ -115,6 +229,9 @@ void MainWidget::saveProject()
         projectData["uniforms"] = activeUniforms;
 
         file.write(QJsonDocument(projectData).toJson());
+        fileProjectName = projectFileName;
+
+        updateWindowTitle();
     }
 }
 
@@ -126,8 +243,10 @@ void MainWidget::compileShader()
 void MainWidget::setupActions()
 {
     // Menu
+    connect(ui.action_New,        SIGNAL(triggered()), this, SLOT(newProject()));
     connect(ui.action_Open,       SIGNAL(triggered()), this, SLOT(loadProject()));
     connect(ui.action_Save,       SIGNAL(triggered()), this, SLOT(saveProject()));
+    connect(ui.actionSave_As,     SIGNAL(triggered()), this, SLOT(saveProjectAs()));
     connect(ui.action_Quit,       SIGNAL(triggered()), this, SLOT(close()));
     
     connect(ui.action_Compile,    SIGNAL(triggered()), this, SLOT(compileShader()));
@@ -144,17 +263,37 @@ void MainWidget::setupActions()
     connect(ui.actionUnlit,       &QAction::triggered, this, [this]{ ui.actionUnlit->setChecked(glWidget->toggleUnlit()); });
 }
 
-void MainWidget::addUniform()
+UniformWidget* MainWidget::addUniform()
 {
-    auto newUniform = new UniformWidget(glWidget);
+    UniformWidget* newUniform = new UniformWidget(glWidget);
     ui.uniformList->widget()->layout()->addWidget(newUniform);
     connect(newUniform, &UniformWidget::deleted, this, &MainWidget::removeUniform);
+
+    return newUniform;
 }
 
 void MainWidget::removeUniform(UniformWidget* target)
 {
     ui.uniformList->widget()->layout()->removeWidget(target);
     delete target;
+}
+
+void MainWidget::removeAllUniforms()
+{
+    QVector<QWidget*> widgets;
+    for (auto child : ui.uniformList->widget()->children())
+    {
+        if (auto uniform = qobject_cast<UniformWidget*>(child))
+        {
+            widgets.push_back(uniform);
+        }
+    }
+
+    for (auto child : widgets)
+    {
+        ui.uniformList->widget()->layout()->removeWidget(child);
+        delete child;
+    }
 }
 
 void MainWidget::loadBuiltinMesh(Mesh::MeshType type)
@@ -219,39 +358,6 @@ void MainWidget::setupEditor()
 
 	ui.tabEditorFrag->setLayout(new QGridLayout());
     ((QGridLayout*)ui.tabEditorFrag->layout())->addWidget(m_textFrag);
-
-    m_textVert->setText(R"vs(#version 330
-
-// available builtin vertex data and locations
-layout (location = 0) in vec3 position;
-//layout (location = 1) in vec3 normal;
-//layout (location = 2) in vec2 uv;
-//layout (location = 3) in vec3 tangent;
-//layout (location = 4) in vec3 bitangent;
-
-// available builtin matrices
-uniform struct
-{
-	//mat4 projection;
-	//mat4 view;
-	//mat4 model;
-    mat4 MVP;
-} matrix;
-
-void main()
-{
-	gl_Position = matrix.MVP * vec4(position, 1);
-})vs");
-
-    m_textFrag->setText(R"fs(#version 330
-
-out vec4 outColor;
-
-void main()
-{
-	outColor = vec4(1,1,1,1);
-})fs");
-
 }
 
 void MainWidget::about()

@@ -23,7 +23,7 @@
  ****************************************************************************/
 #include "SyntaxHighlighter.h"
 
-GLSLSyntaxHlighter::GLSLSyntaxHlighter(QTextDocument *parent)
+GLSLSyntaxHlighter::GLSLSyntaxHlighter(QTextDocument* parent)
     : QSyntaxHighlighter(parent)
 {
     HighlightingRule rule;

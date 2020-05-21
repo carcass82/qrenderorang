@@ -36,9 +36,9 @@ class UniformWidget : public QWidget
     Q_OBJECT
 
 public:
-    enum Type { Float, Vec2, Vec3, Vec4, Mat3, Mat4, Color, Texture, Count };
+    enum UniformType { Float, Vec2, Vec3, Vec4, Mat3, Mat4, Color, Texture, MAX };
 
-    UniformWidget(const QString& name, Type type, PreviewWidget* glWidget, QWidget* parent = nullptr);
+    UniformWidget(const QString& name, UniformType type, PreviewWidget* glWidget, QWidget* parent = nullptr);
     
 	UniformWidget(PreviewWidget* glWidget)
         : UniformWidget("", Float, glWidget)
@@ -47,6 +47,7 @@ public:
     ~UniformWidget();
 
     QJsonObject save() const;
+    void load(const QJsonObject& data);
 
 signals:
     void deleted(UniformWidget* me);
@@ -61,12 +62,12 @@ private:
     void updateNameAndType();
 
     void chooseColor();
-    void chooseTexture();
+    void chooseTexture(const QString& path = "");
 
 
     Ui::UniformWidget ui;
     QString uniformName;
-    Type uniformType = Count;
+    UniformType uniformType = MAX;
     QByteArray uniformTextureData;
     PreviewWidget* GLWidget;
     

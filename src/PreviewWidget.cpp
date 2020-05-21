@@ -149,24 +149,27 @@ void PreviewWidget::paintGL()
     deactivateShader();
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    renderText({ 1, 11 },
+    renderText({ 0, 0 },
                QString("%1 %2 %3").arg(m_SP != 0? "" : "[Invalid Shader]", m_Wireframe ? "Wireframe" : "Fill", m_Unlit ? "Unlit" : "Lit"),
                { 255, 255, 0, 255 });
 }
 
 void PreviewWidget::renderText(const vec2& textPos, const QString& str, const vec4& color, const QFont& font)
 {
+    QFontMetrics fontMetrics(font);
+    vec2 textSize(fontMetrics.width(str), fontMetrics.height());
+
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(QColor(color.r, color.g, color.b, color.a));
     painter.setFont(font);
-    painter.drawText(textPos.x, textPos.y, str);
+    painter.drawText(textPos.x, textSize.y + textPos.y, str);
     painter.end();
 }
 
 void PreviewWidget::updateMesh()
 {
-    if (m_newMesh)
+    if (m_newMesh && m_newMesh->valid())
     {
         delete m_Mesh;
         m_Mesh = std::exchange(m_newMesh, nullptr);

@@ -26,7 +26,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
-UniformWidget::UniformWidget(const QString& name, Type type, PreviewWidget* glWidget, QWidget* parent)
+UniformWidget::UniformWidget(const QString& name, UniformType type, PreviewWidget* glWidget, QWidget* parent)
 	: QWidget(parent)
 	, GLWidget(glWidget)
 {
@@ -64,6 +64,128 @@ UniformWidget::~UniformWidget()
 	if (GLWidget)
 	{
 		resetShaderValue();
+	}
+}
+
+void UniformWidget::load(const QJsonObject& data)
+{
+	if (data.contains("name") && data.contains("type") && data.contains("value"))
+	{
+		UniformType type = (UniformType)(data["type"].toInt() < UniformType::MAX? data["type"].toInt() : 0); data["type"].toInt();
+		QString value = data["value"].toString();
+		QString flags = data.contains("flags")? data["flags"].toString() : "";
+
+		ui.uniformName->setText(data["name"].toString());
+		ui.uniformType->setCurrentIndex(data["type"].toInt());
+		updateNameAndType();
+
+		switch (type)
+		{
+		case Float:
+			ui.uniformX0->setValue(value.toDouble());
+			break;
+
+		case Vec2:
+		{
+			auto vecData = value.split(" ");
+			if (vecData.size() == 2)
+			{
+				ui.uniformX0->setValue(vecData[0].toDouble());
+				ui.uniformY0->setValue(vecData[1].toDouble());
+			}
+			break;
+		}
+
+		case Vec3:
+		{
+			auto vecData = value.split(" ");
+			if (vecData.size() == 3)
+			{
+				ui.uniformX0->setValue(vecData[0].toDouble());
+				ui.uniformY0->setValue(vecData[1].toDouble());
+				ui.uniformZ0->setValue(vecData[2].toDouble());
+			}
+			break;
+		}
+
+		case Vec4:
+		{
+			auto vecData = value.split(" ");
+			if (vecData.size() == 4)
+			{
+				ui.uniformX0->setValue(vecData[0].toDouble());
+				ui.uniformY0->setValue(vecData[1].toDouble());
+				ui.uniformZ0->setValue(vecData[2].toDouble());
+				ui.uniformW0->setValue(vecData[3].toDouble());
+			}
+			break;
+		}
+
+		case Mat3:
+		{
+			auto vecData = value.split(" ");
+			if (vecData.size() == 9)
+			{
+				ui.uniformX0->setValue(vecData[0].toDouble());
+				ui.uniformY0->setValue(vecData[1].toDouble());
+				ui.uniformZ0->setValue(vecData[2].toDouble());
+
+				ui.uniformX1->setValue(vecData[3].toDouble());
+				ui.uniformY1->setValue(vecData[4].toDouble());
+				ui.uniformZ1->setValue(vecData[5].toDouble());
+
+				ui.uniformX2->setValue(vecData[6].toDouble());
+				ui.uniformY2->setValue(vecData[7].toDouble());
+				ui.uniformZ2->setValue(vecData[8].toDouble());
+			}
+			break;
+		}
+
+		case Mat4:
+		{
+			auto vecData = value.split(" ");
+			if (vecData.size() == 16)
+			{
+				ui.uniformX0->setValue(vecData[0].toDouble());
+				ui.uniformY0->setValue(vecData[1].toDouble());
+				ui.uniformZ0->setValue(vecData[2].toDouble());
+				ui.uniformW0->setValue(vecData[3].toDouble());
+
+				ui.uniformX1->setValue(vecData[4].toDouble());
+				ui.uniformY1->setValue(vecData[5].toDouble());
+				ui.uniformZ1->setValue(vecData[6].toDouble());
+				ui.uniformW1->setValue(vecData[7].toDouble());
+
+				ui.uniformX2->setValue(vecData[8].toDouble());
+				ui.uniformY2->setValue(vecData[9].toDouble());
+				ui.uniformZ2->setValue(vecData[10].toDouble());
+				ui.uniformW2->setValue(vecData[11].toDouble());
+
+				ui.uniformX3->setValue(vecData[12].toDouble());
+				ui.uniformY3->setValue(vecData[13].toDouble());
+				ui.uniformZ3->setValue(vecData[14].toDouble());
+				ui.uniformW3->setValue(vecData[15].toDouble());
+			}
+			break;
+		}
+
+		case Color:
+			ui.uniformColorPreview->setPalette(QPalette(QColor(value)));
+			ui.uniformColorPreview->setAutoFillBackground(true);
+			ui.uniformColorSRGB->setChecked(flags == "sRGB");
+			break;
+
+		case Texture:
+		{
+			if (!value.isEmpty())
+			{
+				chooseTexture(value);
+				ui.uniformTextureSRGB->setChecked(flags == "sRGB");
+			}
+			break;
+		}
+
+		}
 	}
 }
 
@@ -280,7 +402,7 @@ void UniformWidget::updateNameAndType()
 	resetShaderValue();
 
 	uniformName = ui.uniformName->text();
-	uniformType = (Type)ui.uniformType->currentIndex();
+	uniformType = (UniformType)ui.uniformType->currentIndex();
 
 	updateUI();
 	updateShaderValue();
@@ -298,18 +420,29 @@ void UniformWidget::chooseColor()
 	}
 }
 
-void UniformWidget::chooseTexture()
+void UniformWidget::chooseTexture(const QString& path)
 {
-    QString imagePath = QFileDialog::getOpenFileName(this, tr("Open Image"), QString(), tr("Images (*.jpg *.png *.tga *.bmp *.psd *.gif *.hdr *.pic *.png);;All files (*.*)"));
+	QString imagePath;
+	if (path.isEmpty())
+	{
+		imagePath = QFileDialog::getOpenFileName(this, tr("Open Image"), QString(), tr("Images (*.jpg *.png *.tga *.bmp *.psd *.gif *.hdr *.pic *.png);;All files (*.*)"));
+	}
+	else
+	{
+		imagePath = path;
+	}
+	
     if (!imagePath.isEmpty())
     {
+		ui.uniformTexturePath->setPalette(QApplication::palette(ui.uniformTexturePath));
+		ui.uniformTexturePath->setText(imagePath);
+
         int width, height, n;
         unsigned char* pixels = stbi_load(imagePath.toStdString().c_str(), &width, &height, &n, 4);
         if (pixels)
         {
 			uniformTextureData = QByteArray(reinterpret_cast<const char*>(pixels), width * height * 4);
 
-            ui.uniformTexturePath->setText(imagePath);
             ui.uniformTexturePreview->setPixmap(QPixmap::fromImage(QImage(pixels, width, height, QImage::Format_RGBA8888).scaled(ui.uniformTexturePreview->size(), Qt::KeepAspectRatio)));
 			ui.uniformTextureSize->setText(QString("%1x%2").arg(QString::number(width), QString::number(height)));
 
@@ -317,5 +450,12 @@ void UniformWidget::chooseTexture()
 
 			updateShaderValue();
         }
+		else
+		{
+			QPalette notFound;
+			notFound.setColor(QPalette::Text, Qt::red);
+
+			ui.uniformTexturePath->setPalette(notFound);
+		}
     }
 }
