@@ -25,6 +25,7 @@
 #include <QPainter>
 #include <QPoint>
 #include <QElapsedTimer>
+#include "ShaderEditor.h"
 #include "Mesh.h"
 
 PreviewWidget::PreviewWidget(QSurfaceFormat format, QWidget* parent)
@@ -221,14 +222,16 @@ void PreviewWidget::updateMesh()
 
 void PreviewWidget::updateShader()
 {
-    if (m_buildShader)
+    if (!m_shaderRequests.isEmpty())
     {
+        auto lastRequest = m_shaderRequests.back();
+
         QElapsedTimer timer;
         timer.start();
 
         GLuint newSP;
         QString errorString;
-        if (buildShader(m_VS, m_FS, newSP, errorString))
+        if (buildShader(lastRequest.vs, lastRequest.fs, newSP, errorString))
         {
             LOG(QString("Compile Shader OK in %1 msecs").arg(timer.elapsed()));
             std::swap(m_SP, newSP);
@@ -237,9 +240,9 @@ void PreviewWidget::updateShader()
         {
             LOG(QString("Compile Shader FAILED in %1 msecs\n%2\n").arg(QString::number(timer.elapsed()), errorString));
         }
-
         glDeleteProgram(newSP);
-        m_buildShader = false;
+
+        m_shaderRequests.clear();
     }
 }
 
@@ -295,7 +298,10 @@ bool PreviewWidget::buildShader(const QString& vs, const QString& fs, GLuint& ou
         glShaderSource(VS, 1, &Source, nullptr);
         glCompileShader(VS);
     }
-    CheckError(VS, false, log);
+    QString vsLog;
+    CheckError(VS, false, vsLog);
+    ErrorHighlighter<ShaderEditor*>::get().vserror(vsLog);
+    log += vsLog;
 
     GLuint FS = glCreateShader(GL_FRAGMENT_SHADER);
     {
@@ -304,7 +310,10 @@ bool PreviewWidget::buildShader(const QString& vs, const QString& fs, GLuint& ou
         glShaderSource(FS, 1, &Source, nullptr);
         glCompileShader(FS);
     }
-    CheckError(FS, false, log);
+    QString fsLog;
+    CheckError(FS, false, fsLog);
+    ErrorHighlighter<ShaderEditor*>::get().fserror(fsLog);
+    log += fsLog;
 
     GLuint newSP = glCreateProgram();
     glAttachShader(newSP, VS);

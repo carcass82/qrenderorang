@@ -22,50 +22,46 @@
  *                                                                          *
  ****************************************************************************/
 #pragma once
-#include <QMainWindow>
-#include <QMessageBox>
-#include <QFileDialog>
-#include <QDate>
+#include "Common.h"
+#include <QSet>
+#include <QPlainTextEdit>
 
-#include "PreviewWidget.h"
-#include "Mesh.h"
-#include "ui_qrenderorang.h"
-
-class ShaderEditor;
-class GLSLSyntaxHlighter;
-class UniformWidget;
-
-class MainWidget : public QMainWindow
+//
+// code mostly from Qt CodeEditor example: https://doc.qt.io/qt-5/qtwidgets-widgets-codeeditor-example.html
+//
+class ShaderEditor : public QPlainTextEdit
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	MainWidget(QWidget *parent = 0);
+    ShaderEditor(QWidget* parent = nullptr);
 
-public slots:
-	void newProject();
-	void loadProject();
-	void saveProjectAs();
-	void saveProject();
-	void about();
-	void compileShader();
-    void loadBuiltinMesh(Mesh::MeshType type);
-    void loadMesh();
-    UniformWidget* addUniform();
-    void removeUniform(UniformWidget* target);
-	void removeAllUniforms();
+    void lineNumberAreaPaintEvent(QPaintEvent* event);
+    int lineNumberAreaWidth();
+
+    void highlightLine(const QSet<int>& lineNumbers);
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+
+private slots:
+    void updateLineNumberAreaWidth(int newBlockCount);
+    void updateLineNumberArea(const QRect& rect, int dy);
 
 private:
-	void setupActions();
-	void setupGLPreview();
-	void setupEditor();
-	void updateWindowTitle();
 
-	QString fileProjectName;
-	Ui::QRenderOrangGUI ui;
-    ShaderEditor* m_textVert;
-    ShaderEditor* m_textFrag;
-	PreviewWidget* glWidget;
-    GLSLSyntaxHlighter* m_textVertHL;
-    GLSLSyntaxHlighter* m_textFragHL;
+    class LineNumberArea : public QWidget
+    {
+    public:
+        LineNumberArea(ShaderEditor* editor = nullptr)
+            : QWidget(editor), codeEditor(editor)     {}
+
+        QSize sizeHint() const override               { return QSize(codeEditor->lineNumberAreaWidth(), 0); }
+        void paintEvent(QPaintEvent* event) override  { codeEditor->lineNumberAreaPaintEvent(event); }
+
+    private:
+        ShaderEditor* codeEditor;
+    };
+
+    LineNumberArea* lineNumberArea;
 };

@@ -22,6 +22,7 @@
  *                                                                          *
  ****************************************************************************/
 #include "MainWidget.h"
+#include "ShaderEditor.h"
 #include "SyntaxHighlighter.h"
 #include "UniformWidget.h"
 #include <QElapsedTimer>
@@ -52,6 +53,9 @@ MainWidget::MainWidget(QWidget* parent)
     // register LOG service
     Logger::get().setOutputWidget(ui.textCompileLog);
     LOG("MainWindow initialized");
+
+    ErrorHighlighter<ShaderEditor*>::get().setOutputWidgetVS(m_textVert);
+    ErrorHighlighter<ShaderEditor*>::get().setOutputWidgetFS(m_textFrag);
 
     newProject();
 
@@ -91,9 +95,11 @@ void MainWidget::newProject()
     fileProjectName.clear();
     updateWindowTitle();
 
+    removeAllUniforms();
+
     // load default shader in text editor
 
-    m_textVert->setText(R"vs(#version 330
+    m_textVert->setPlainText(R"vs(#version 330
 
 // available builtin vertex data and locations
 layout (location = 0) in vec3 position;
@@ -116,7 +122,7 @@ void main()
 	gl_Position = matrix.MVP * vec4(position, 1);
 })vs");
 
-    m_textFrag->setText(R"fs(#version 330
+    m_textFrag->setPlainText(R"fs(#version 330
 
 out vec4 outColor;
 
@@ -333,11 +339,8 @@ void MainWidget::loadMesh()
 
 void MainWidget::setupEditor()
 {
-    m_textVert = new QTextEdit(ui.tabEditorVert);
-    m_textFrag = new QTextEdit(ui.tabEditorFrag);
-
-    m_textVert->setAcceptRichText(true);
-    m_textFrag->setAcceptRichText(true);
+    m_textVert = new ShaderEditor(ui.tabEditorVert);
+    m_textFrag = new ShaderEditor(ui.tabEditorFrag);
 
     m_textVert->setWordWrapMode(QTextOption::WrapMode::NoWrap);
     m_textFrag->setWordWrapMode(QTextOption::WrapMode::NoWrap);

@@ -9,12 +9,14 @@ HEADERS            += include/Common.h             \
                       include/PreviewWidget.h      \
                       include/UniformWidget.h      \
                       include/Mesh.h               \
+                      include/ShaderEditor.h       \
                       include/SyntaxHighlighter.h
 
 SOURCES            += src/MainWidget.cpp         \
                       src/PreviewWidget.cpp      \
                       src/UniformWidget.cpp      \
                       src/Mesh.cpp               \
+                      src/ShaderEditor.cpp       \
                       src/SyntaxHighlighter.cpp  \
                       src/main.cpp
 

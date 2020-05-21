@@ -101,6 +101,9 @@ private:
     Mesh* m_newMesh = nullptr;
     GLuint m_VAO;
 
+    GLuint m_SP = 0;
+    GLuint m_UnlitSP = 0;
+
     bool m_uploadMaterialParams = false;
     QHash<QString, GLuint> textureParams;
     QHash<QString, float> floatParams;
@@ -110,11 +113,12 @@ private:
     QHash<QString, mat3> mat3Params;
     QHash<QString, mat4> mat4Params;
 
-    bool m_buildShader = false;
-    QString m_VS;
-    QString m_FS;
-    GLuint m_SP = 0;
-    GLuint m_UnlitSP = 0;
+    struct ShaderRequest
+    {
+        QString vs;
+        QString fs;
+    };
+    QVector<ShaderRequest> m_shaderRequests;
 
     struct TextureRequest
     {
@@ -147,9 +151,11 @@ inline void PreviewWidget::setMesh(Mesh* mesh)
 
 inline void PreviewWidget::setShader(const QString& v, const QString& f)
 {
-    m_VS = v;
-    m_FS = f;
-    m_buildShader = true;
+    ShaderRequest request;
+    request.vs = v;
+    request.fs = f;
+
+    m_shaderRequests.push_back(request);
     update();
 }
 
@@ -190,6 +196,7 @@ inline void PreviewWidget::setShaderResource(const QString& parameter, const cha
         request.textureData = QByteArray(pixels, width * height * bpp);
         request.textureSRGB = sRGB;
         request.remove = false;
+
         m_textureRequests.push_back(request);
 
         update();

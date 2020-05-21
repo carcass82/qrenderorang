@@ -89,3 +89,44 @@ private:
 };
 
 #define LOG(x) Logger::get().log(x)
+
+//
+//
+//
+template<typename T>
+class ErrorHighlighter
+{
+public:
+    static ErrorHighlighter& get() { static ErrorHighlighter instance; return instance; }
+    void setOutputWidgetVS(T widget) { outputVS = widget; }
+    void setOutputWidgetFS(T widget) { outputFS = widget; }
+
+    QSet<int> error(const QString& log)
+    {
+        static const QRegExp lineNumberFinder(R"pattern(0\((\d+)\) : error)pattern");
+
+        QSet<int> foundLines;
+        int pos = 0;
+        while ((pos = lineNumberFinder.indexIn(log, pos)) != -1)
+        {
+            foundLines.insert(lineNumberFinder.cap(1).toInt());
+            pos += lineNumberFinder.matchedLength();
+        }
+
+        return foundLines;
+    }
+
+    void vserror(const QString& log)
+    {
+        outputVS->highlightLine(error(log));
+    }
+
+    void fserror(const QString& log)
+    {
+        outputFS->highlightLine(error(log));
+    }
+
+private:
+    T outputVS;
+    T outputFS;
+};
