@@ -31,25 +31,18 @@ ShaderEditor::ShaderEditor(QWidget* parent)
 {
     lineNumberArea = new LineNumberArea(this);
 
-    connect(this, &ShaderEditor::blockCountChanged,     this, &ShaderEditor::updateLineNumberAreaWidth);
-    connect(this, &ShaderEditor::updateRequest,         this, &ShaderEditor::updateLineNumberArea);
+    connect(this, &ShaderEditor::blockCountChanged, this, &ShaderEditor::updateLineNumberAreaWidth);
+    connect(this, &ShaderEditor::updateRequest,     this, &ShaderEditor::updateLineNumberArea);
 
     updateLineNumberAreaWidth(0);
 }
 
 int ShaderEditor::lineNumberAreaWidth()
 {
-    int digits = 1;
-    int max = qMax(1, blockCount());
-    while (max >= 10)
-    {
-        max /= 10;
-        ++digits;
-    }
+    const int charWidth = fontMetrics().horizontalAdvance(QLatin1Char('8'));
+    const int digits = QString::number(blockCount()).size();
 
-    int space = 3 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
-
-    return space;
+    return charWidth * max(2, digits);
 }
 
 void ShaderEditor::updateLineNumberAreaWidth(int /* newBlockCount */)

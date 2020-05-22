@@ -61,7 +61,7 @@ private:
 
     void updateNameAndType();
 
-    void chooseColor();
+    void chooseColor(const QColor& newColor = QColor());
     void chooseTexture(const QString& path = "");
 
 

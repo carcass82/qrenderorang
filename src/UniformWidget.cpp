@@ -170,17 +170,16 @@ void UniformWidget::load(const QJsonObject& data)
 		}
 
 		case Color:
-			ui.uniformColorPreview->setPalette(QPalette(QColor(value)));
-			ui.uniformColorPreview->setAutoFillBackground(true);
 			ui.uniformColorSRGB->setChecked(flags == "sRGB");
+			chooseColor(QColor(value));
 			break;
 
 		case Texture:
 		{
 			if (!value.isEmpty())
 			{
-				chooseTexture(value);
 				ui.uniformTextureSRGB->setChecked(flags == "sRGB");
+				chooseTexture(value);
 			}
 			break;
 		}
@@ -408,9 +407,9 @@ void UniformWidget::updateNameAndType()
 	updateShaderValue();
 }
 
-void UniformWidget::chooseColor()
+void UniformWidget::chooseColor(const QColor& newColor)
 {
-	const QColor color = QColorDialog::getColor(ui.uniformColorPreview->palette().background().color(), this, "Select Color", QColorDialog::ShowAlphaChannel);
+	const QColor color = newColor.isValid()? newColor : QColorDialog::getColor(ui.uniformColorPreview->palette().background().color(), this, "Select Color", QColorDialog::ShowAlphaChannel);
 	if (color.isValid())
 	{
 		ui.uniformColorPreview->setPalette(QPalette(color));
