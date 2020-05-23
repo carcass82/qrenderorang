@@ -412,6 +412,10 @@ void UniformWidget::chooseColor(const QColor& newColor)
 	const QColor color = newColor.isValid()? newColor : QColorDialog::getColor(ui.uniformColorPreview->palette().background().color(), this, "Select Color", QColorDialog::ShowAlphaChannel);
 	if (color.isValid())
 	{
+		float luma = yuv(vec3(color.redF(), color.greenF(), color.blueF())).x;
+		QString labelText = QString("<a href=\"dummylink\" style=\"color: %1;\">select</a>").arg(luma > .65f? "black" : "white");
+
+		ui.uniformColorPreview->setText(labelText);
 		ui.uniformColorPreview->setPalette(QPalette(color));
 		ui.uniformColorPreview->setAutoFillBackground(true);
 
@@ -421,40 +425,32 @@ void UniformWidget::chooseColor(const QColor& newColor)
 
 void UniformWidget::chooseTexture(const QString& path)
 {
-	QString imagePath;
+	QString imagePath(path);
 	if (path.isEmpty())
 	{
 		imagePath = QFileDialog::getOpenFileName(this, tr("Open Image"), QString(), tr("Images (*.jpg *.png *.tga *.bmp *.psd *.gif *.hdr *.pic *.png);;All files (*.*)"));
 	}
+
+	QPalette filePathColor(QApplication::palette(ui.uniformTexturePath));
+
+	int width, height, bpp;
+    unsigned char* pixels = stbi_load(qPrintable(imagePath), &width, &height, &bpp, 4);
+    if (pixels)
+    {
+		uniformTextureData = QByteArray(reinterpret_cast<const char*>(pixels), width * height * 4);
+
+        ui.uniformTexturePreview->setPixmap(QPixmap::fromImage(QImage(pixels, width, height, QImage::Format_RGBA8888).scaled(ui.uniformTexturePreview->size(), Qt::KeepAspectRatio)));
+		ui.uniformTextureSize->setText(QString("%1x%2").arg(QString::number(width), QString::number(height)));
+
+        stbi_image_free(pixels);
+
+		updateShaderValue();
+    }
 	else
 	{
-		imagePath = path;
+		filePathColor.setColor(QPalette::Text, Qt::red);
 	}
-	
-    if (!imagePath.isEmpty())
-    {
-		ui.uniformTexturePath->setPalette(QApplication::palette(ui.uniformTexturePath));
-		ui.uniformTexturePath->setText(imagePath);
 
-        int width, height, n;
-        unsigned char* pixels = stbi_load(imagePath.toStdString().c_str(), &width, &height, &n, 4);
-        if (pixels)
-        {
-			uniformTextureData = QByteArray(reinterpret_cast<const char*>(pixels), width * height * 4);
-
-            ui.uniformTexturePreview->setPixmap(QPixmap::fromImage(QImage(pixels, width, height, QImage::Format_RGBA8888).scaled(ui.uniformTexturePreview->size(), Qt::KeepAspectRatio)));
-			ui.uniformTextureSize->setText(QString("%1x%2").arg(QString::number(width), QString::number(height)));
-
-            stbi_image_free(pixels);
-
-			updateShaderValue();
-        }
-		else
-		{
-			QPalette notFound;
-			notFound.setColor(QPalette::Text, Qt::red);
-
-			ui.uniformTexturePath->setPalette(notFound);
-		}
-    }
+	ui.uniformTexturePath->setPalette(QApplication::palette(ui.uniformTexturePath));
+	ui.uniformTexturePath->setText(imagePath);
 }

@@ -75,14 +75,14 @@ void ShaderEditor::resizeEvent(QResizeEvent* e)
     lineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
 }
 
-void ShaderEditor::highlightLine(const QSet<int>& lineNumbers)
+void ShaderEditor::highlightLine(const QSet<int>& lineNumbers, const QColor& highlightColor)
 {
     QList<QTextEdit::ExtraSelection> extraSelections;
-    
+
+    QColor lineColor = highlightColor;
     for (int lineNumber : lineNumbers)
     {
         QTextEdit::ExtraSelection selection;
-        QColor lineColor = QColor(Qt::red).lighter();
         selection.format.setBackground(lineColor);
         selection.format.setProperty(QTextFormat::FullWidthSelection, true);
         selection.cursor = QTextCursor(document()->findBlockByNumber(max(0, lineNumber - 1)));

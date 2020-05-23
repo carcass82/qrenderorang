@@ -94,8 +94,8 @@ void PreviewWidget::initializeGL()
 
     QString unlitVS = R"vs(#version 330
                       layout (location = 0) in vec3 position;
-                      uniform struct { mat4 model; mat4 view; mat4 projection; } matrix;
-                      void main() { gl_Position = matrix.projection * matrix.view * matrix.model * vec4(position, 1.0); })vs";
+                      uniform struct { mat4 MVP; } matrix;
+                      void main() { gl_Position = matrix.MVP * vec4(position, 1.0); })vs";
 
     QString unlitFS = R"fs(#version 330
                       out vec4 outColor;

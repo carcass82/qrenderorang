@@ -854,7 +854,7 @@
                 <enum>QFrame::Sunken</enum>
                </property>
                <property name="text">
-                <string>&lt;a href=&quot;dummylink&quot;&gt;select&lt;/a&gt;</string>
+                <string>&lt;a href=&quot;dummylink&quot; style=&quot;color: white;&quot;&gt;select&lt;/a&gt;</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignCenter</set>

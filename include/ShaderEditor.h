@@ -39,7 +39,7 @@ public:
     void lineNumberAreaPaintEvent(QPaintEvent* event);
     int lineNumberAreaWidth();
 
-    void highlightLine(const QSet<int>& lineNumbers);
+    void highlightLine(const QSet<int>& lineNumbers, const QColor& highlightColor = QColor(255, 85, 85));
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
