@@ -61,12 +61,15 @@ void PreviewWidget::updateMatrices()
     }
 
     m_ModelViewMatrix = m_ViewMatrix * m_ModelMatrix;
+    m_NormalMatrix = mat3(transpose(inverse(m_ModelViewMatrix)));
     m_ModelViewProjectionMatrix = m_ProjectionMatrix * m_ModelViewMatrix;
 
     setShaderParameter("matrix.model", m_ModelMatrix);
     setShaderParameter("matrix.view", m_ViewMatrix);
     setShaderParameter("matrix.projection", m_ProjectionMatrix);
+    setShaderParameter("matrix.MV", m_ModelViewMatrix);
     setShaderParameter("matrix.MVP", m_ModelViewProjectionMatrix);
+    setShaderParameter("matrix.normal", m_NormalMatrix);
 }
 
 void PreviewWidget::initializeGL()
@@ -75,7 +78,7 @@ void PreviewWidget::initializeGL()
 
     glEnable(GL_FRAMEBUFFER_SRGB);
 
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClearColor(0.1f, 0.1f, 0.2f, 1.0f);
     glClearDepth(1.0f);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);

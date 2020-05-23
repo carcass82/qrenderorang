@@ -228,6 +228,8 @@ Mesh* Mesh::Load(MeshType Shape)
     ComputeBoundingBox();
     ComputeTangentsAndBitangents();
 
+    m_Type = Shape;
+
     return this;
 }
 

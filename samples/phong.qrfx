@@ -1,0 +1,54 @@
+{
+    "fs": "#version 330\n\nout vec4 outColor;\n\nstruct vsOut\n{\n\tvec3 pos;\n\tvec3 normal;\n};\nin vsOut vs;\n\nin vec3 lightPos;\n\nuniform float Ka;\nuniform float Kd;\nuniform float Ks;\nuniform float shininessVal;\nuniform vec4 ambientColor;\nuniform vec4 diffuseColor;\nuniform vec4 specularColor;\n\nvoid main()\n{\n\tvec3 N = normalize(vs.normal);\n\tvec3 L = normalize(lightPos - vs.pos);\n\tvec3 V = normalize(-vs.pos);\n\tvec3 R = reflect(-L, N);\n\n\tfloat NdotL = max(dot(N, L), 0.0);\n\tfloat RdotV = max(dot(R, V), 0.0);\n\n\tfloat specularPower = pow(RdotV, shininessVal);\n\n\tvec3 ambient = Ka * ambientColor.rgb;\n\tvec3 diffuse = Kd * diffuseColor.rgb;\n\tvec3 specular = Ks * specularPower * specularColor.rgb;\n\n\toutColor = vec4(ambient + (diffuse + specular) * NdotL, 1);\n}\n",
+    "mesh": {
+        "path": "",
+        "type": 1
+    },
+    "uniforms": [
+        {
+            "name": "light",
+            "type": 2,
+            "value": "1 2 1"
+        },
+        {
+            "name": "Ka",
+            "type": 0,
+            "value": "0.1"
+        },
+        {
+            "name": "Kd",
+            "type": 0,
+            "value": "0.6"
+        },
+        {
+            "name": "Ks",
+            "type": 0,
+            "value": "0.3"
+        },
+        {
+            "name": "shininessVal",
+            "type": 0,
+            "value": "32"
+        },
+        {
+            "flags": "sRGB",
+            "name": "ambientColor",
+            "type": 6,
+            "value": "#ffff0000"
+        },
+        {
+            "flags": "sRGB",
+            "name": "diffuseColor",
+            "type": 6,
+            "value": "#ffff0000"
+        },
+        {
+            "flags": "sRGB",
+            "name": "specularColor",
+            "type": 6,
+            "value": "#ffffffff"
+        }
+    ],
+    "version": "1",
+    "vs": "#version 330\n\n// available builtin vertex data and locations\nlayout (location = 0) in vec3 position;\nlayout (location = 1) in vec3 normal;\nlayout (location = 2) in vec2 uv;\nlayout (location = 3) in vec3 tangent;\nlayout (location = 4) in vec3 bitangent;\n\n// available builtin matrices\nuniform struct\n{\n\tmat4 projection;\n\tmat4 view;\n\tmat4 model;\n    mat4 MV;\n    mat4 MVP;\n\tmat3 normal;\n} matrix;\n\nuniform vec3 light;\n\nstruct vsOut\n{\n\tvec3 pos;\n\tvec3 normal;\n};\nout vsOut vs;\n\nout vec3 lightPos;\n\nvoid main()\n{\n\tvec4 vertPos4 = matrix.MV * vec4(position, 1.0);\n\tvs.pos = vec3(vertPos4) / vertPos4.w;\n\n\tvs.normal = matrix.normal * normal;\n\n\tvec4 lightPos4 = matrix.MV * vec4(light, 1.0);\n\tlightPos = vec3(lightPos4) / lightPos4.w;\n\n\tgl_Position = matrix.MVP * vec4(position, 1);\n}\n"
+}

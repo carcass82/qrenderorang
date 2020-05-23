@@ -92,6 +92,7 @@ private:
     mat4 m_ModelViewMatrix;
     mat4 m_ProjectionMatrix;
     mat4 m_ModelViewProjectionMatrix;
+    mat3 m_NormalMatrix;
     
     bool m_Initialized = false;
     bool m_Wireframe = false;

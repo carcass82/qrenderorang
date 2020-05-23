@@ -103,18 +103,20 @@ void MainWidget::newProject()
 
 // available builtin vertex data and locations
 layout (location = 0) in vec3 position;
-//layout (location = 1) in vec3 normal;
-//layout (location = 2) in vec2 uv;
-//layout (location = 3) in vec3 tangent;
-//layout (location = 4) in vec3 bitangent;
+layout (location = 1) in vec3 normal;
+layout (location = 2) in vec2 uv;
+layout (location = 3) in vec3 tangent;
+layout (location = 4) in vec3 bitangent;
 
 // available builtin matrices
 uniform struct
 {
-	//mat4 projection;
-	//mat4 view;
-	//mat4 model;
+	mat4 projection;
+	mat4 view;
+	mat4 model;
+    mat4 MV;
     mat4 MVP;
+    mat3 normal;
 } matrix;
 
 void main()
