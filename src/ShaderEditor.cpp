@@ -44,7 +44,7 @@ int ShaderEditor::lineNumberAreaWidth()
     const int charWidth = fontMetrics().horizontalAdvance(QLatin1Char('8'));
     const int digits = QString::number(blockCount()).size();
 
-    return charWidth * max(2, digits);
+    return charWidth * max(5, digits);
 }
 
 void ShaderEditor::updateLineNumberAreaWidth(int /* newBlockCount */)
@@ -117,7 +117,7 @@ void ShaderEditor::lineNumberAreaPaintEvent(QPaintEvent* event)
             QString number = QString::number(blockNumber + 1);
             painter.setPen(Qt::black);
             painter.setFont(blockNumber == textCursor().blockNumber()? boldFont : defaultFont);
-            painter.drawText(0, top, lineNumberArea->width(), fontMetrics().height(), Qt::AlignRight, number);
+            painter.drawText(0, top, lineNumberArea->width(), fontMetrics().height(), Qt::AlignCenter, number);
         }
 
         block = block.next();

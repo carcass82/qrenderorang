@@ -77,15 +77,15 @@ GLSLSyntaxHlighter::GLSLSyntaxHlighter(QTextDocument* parent)
     //
     // register all parsing rules
     //
-    highlightingRules.append({ QRegExp("//[^\n]*"), commentFormat });
-
-    highlightingRules.append({ QRegExp("^\\s*#[^\n]*"), preprocessorFormat });
-
     foreach(QString pattern, keywords)  { highlightingRules.append({ QRegExp("\\b" + pattern + "\\b"),      keywordsFormat }); }
     
     foreach(QString pattern, builtins)  { highlightingRules.append({ QRegExp("\\b" + pattern + "\\b"),      builtinsFormat }); }
     
     foreach(QString pattern, functions) { highlightingRules.append({ QRegExp("\\b" + pattern + "+(?=\\()"), functionFormat }); }
+
+    highlightingRules.append({ QRegExp("^\\s*#[^\n]*"), preprocessorFormat });
+
+    highlightingRules.append({ QRegExp("//[^\n]*"), commentFormat });
 }
 
 void GLSLSyntaxHlighter::highlightBlock(const QString &text)
