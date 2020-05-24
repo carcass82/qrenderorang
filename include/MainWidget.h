@@ -47,13 +47,17 @@ public slots:
 	void loadProject();
 	void saveProjectAs();
 	void saveProject();
-	void about();
+	
 	void compileShader();
-    void loadBuiltinMesh(Mesh::MeshType type);
-    void loadMesh();
-    UniformWidget* addUniform();
+    
+	void loadBuiltinMesh(Mesh::MeshType type);
+    void importMesh();
+    
+	UniformWidget* addUniform();
     void removeUniform(UniformWidget* target);
 	void removeAllUniforms();
+
+	void about();
 
 private:
 	void setupActions();

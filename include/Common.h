@@ -94,13 +94,14 @@ private:
 //
 //
 //
+
 template<typename T>
 class ErrorHighlighter
 {
 public:
-    static ErrorHighlighter& get() { static ErrorHighlighter instance; return instance; }
-    void setOutputWidgetVS(T widget) { outputVS = widget; }
-    void setOutputWidgetFS(T widget) { outputFS = widget; }
+    static ErrorHighlighter& get()    { static ErrorHighlighter instance; return instance; }
+    void setOutputWidgetVS(T* widget) { outputVS = widget; }
+    void setOutputWidgetFS(T* widget) { outputFS = widget; }
 
     QSet<int> error(const QString& log)
     {
@@ -128,6 +129,6 @@ public:
     }
 
 private:
-    T outputVS;
-    T outputFS;
+    T* outputVS;
+    T* outputFS;
 };

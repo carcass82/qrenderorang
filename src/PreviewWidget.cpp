@@ -303,7 +303,7 @@ bool PreviewWidget::buildShader(const QString& vs, const QString& fs, GLuint& ou
     }
     QString vsLog;
     CheckError(VS, false, vsLog);
-    ErrorHighlighter<ShaderEditor*>::get().vserror(vsLog);
+    ErrorHighlighter<ShaderEditor>::get().vserror(vsLog);
     log += vsLog;
 
     GLuint FS = glCreateShader(GL_FRAGMENT_SHADER);
@@ -315,7 +315,7 @@ bool PreviewWidget::buildShader(const QString& vs, const QString& fs, GLuint& ou
     }
     QString fsLog;
     CheckError(FS, false, fsLog);
-    ErrorHighlighter<ShaderEditor*>::get().fserror(fsLog);
+    ErrorHighlighter<ShaderEditor>::get().fserror(fsLog);
     log += fsLog;
 
     GLuint newSP = glCreateProgram();

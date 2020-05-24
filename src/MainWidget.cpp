@@ -54,8 +54,8 @@ MainWidget::MainWidget(QWidget* parent)
     Logger::get().setOutputWidget(ui.textCompileLog);
     LOG("MainWindow initialized");
 
-    ErrorHighlighter<ShaderEditor*>::get().setOutputWidgetVS(m_textVert);
-    ErrorHighlighter<ShaderEditor*>::get().setOutputWidgetFS(m_textFrag);
+    ErrorHighlighter<ShaderEditor>::get().setOutputWidgetVS(m_textVert);
+    ErrorHighlighter<ShaderEditor>::get().setOutputWidgetFS(m_textFrag);
 
     newProject();
 
@@ -135,6 +135,7 @@ void main()
 
     // compile default shader with default mesh
     loadBuiltinMesh(Mesh::SPHERE);
+    
     compileShader();
 }
 
@@ -198,7 +199,10 @@ void MainWidget::saveProjectAs()
 {
     if (!fileProjectName.isEmpty())
     {
-        auto projectFileName = QFileDialog::getSaveFileName(this, tr("Save Project"), "", tr("QRenderOrang Project (*.qrfx)"));
+        auto projectFileName = QFileDialog::getSaveFileName(this,
+                                                            tr("Save Project"),
+                                                            "",
+                                                            tr("QRenderOrang Project (*.qrfx)"));
         if (!projectFileName.isEmpty())
         {
             fileProjectName = projectFileName;
@@ -210,14 +214,17 @@ void MainWidget::saveProjectAs()
 
 void MainWidget::saveProject()
 {
-    auto projectFileName = fileProjectName.isEmpty()? QFileDialog::getSaveFileName(this,
-                                                                                   tr("Save Project"),
-                                                                                   "",
-                                                                                   tr("QRenderOrang Project (*.qrfx)"))
-                                                    : fileProjectName;
+    auto projectFileName = fileProjectName;
+    if (projectFileName.isEmpty())
+    {
+        projectFileName = QFileDialog::getSaveFileName(this,
+                                                       tr("Save Project"),
+                                                       "",
+                                                       tr("QRenderOrang Project (*.qrfx)"));
+    }
 
     QFile file(projectFileName);
-    if (!projectFileName.isEmpty() && file.open(QIODevice::WriteOnly))
+    if (file.open(QIODevice::WriteOnly))
     {
         QJsonObject projectData;
 
@@ -251,21 +258,21 @@ void MainWidget::compileShader()
 void MainWidget::setupActions()
 {
     // Menu
-    connect(ui.action_New,        SIGNAL(triggered()), this, SLOT(newProject()));
-    connect(ui.action_Open,       SIGNAL(triggered()), this, SLOT(loadProject()));
-    connect(ui.action_Save,       SIGNAL(triggered()), this, SLOT(saveProject()));
-    connect(ui.actionSave_As,     SIGNAL(triggered()), this, SLOT(saveProjectAs()));
-    connect(ui.action_Quit,       SIGNAL(triggered()), this, SLOT(close()));
+    connect(ui.action_New,        &QAction::triggered, this, &MainWidget::newProject);
+    connect(ui.action_Open,       &QAction::triggered, this, &MainWidget::loadProject);
+    connect(ui.action_Save,       &QAction::triggered, this, &MainWidget::saveProject);
+    connect(ui.actionSave_As,     &QAction::triggered, this, &MainWidget::saveProjectAs);
+    connect(ui.action_Quit,       &QAction::triggered, this, &MainWidget::close);
     
-    connect(ui.action_Compile,    SIGNAL(triggered()), this, SLOT(compileShader()));
-    connect(ui.actionAdd_Uniform, SIGNAL(triggered()), this, SLOT(addUniform()));
+    connect(ui.action_Compile,    &QAction::triggered, this, &MainWidget::compileShader);
+    connect(ui.actionAdd_Uniform, &QAction::triggered, this, &MainWidget::addUniform);
     
-    connect(ui.action_Qt,         SIGNAL(triggered()), qApp, SLOT(aboutQt()));
-    connect(ui.action_QRO,        SIGNAL(triggered()), this, SLOT(about()));
+    connect(ui.action_Qt,         &QAction::triggered, this, [this]{ qApp->aboutQt(); });
+    connect(ui.action_QRO,        &QAction::triggered, this, &MainWidget::about);
 
     connect(ui.actionSphere,      &QAction::triggered, this, [this]{ loadBuiltinMesh(Mesh::SPHERE); });
     connect(ui.actionCube,        &QAction::triggered, this, [this]{ loadBuiltinMesh(Mesh::CUBE); });
-    connect(ui.actionImport,      SIGNAL(triggered()), this, SLOT(loadMesh()));
+    connect(ui.actionImport,      &QAction::triggered, this, &MainWidget::importMesh);
 
     connect(ui.actionWireframe,   &QAction::triggered, this, [this]{ ui.actionWireframe->setChecked(glWidget->toggleWireframe()); });
     connect(ui.actionUnlit,       &QAction::triggered, this, [this]{ ui.actionUnlit->setChecked(glWidget->toggleUnlit()); });
@@ -315,7 +322,7 @@ void MainWidget::loadBuiltinMesh(Mesh::MeshType type)
     glWidget->setMesh(newMesh);
 }
 
-void MainWidget::loadMesh()
+void MainWidget::importMesh()
 {
     QString meshFile = QFileDialog::getOpenFileName(this,
                                                     tr("Load Mesh"),

@@ -40,13 +40,9 @@ private:
     };
     QVector<HighlightingRule> highlightingRules;
 
-    QTextCharFormat kwordsFormat;
+    QTextCharFormat keywordsFormat;
     QTextCharFormat builtinsFormat;
     QTextCharFormat functionFormat;
     QTextCharFormat preprocessorFormat;
-    QTextCharFormat singleLineCommentFormat;
-    QTextCharFormat multiLineCommentFormat;
-
-    QRegExp commentStartExpression;
-    QRegExp commentEndExpression;
+    QTextCharFormat commentFormat;
 };

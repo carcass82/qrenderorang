@@ -26,84 +26,66 @@
 GLSLSyntaxHlighter::GLSLSyntaxHlighter(QTextDocument* parent)
     : QSyntaxHighlighter(parent)
 {
-    HighlightingRule rule;
-
-    kwordsFormat.setForeground(Qt::blue);
-    QStringList keywords;
-    keywords << "uniform" << "int" << "float" << "bool" << "inout"
-             << "vec2" << "vec3" << "vec4" << "ivec2" << "out"
-             << "ivec3" << "ivec4" << "bvec2" << "bvec3" << "in"
-             << "bvec4" << "mat2" << "mat3" << "mat4" << "attribute"
-             << "sampler1D" << "sampler2D" << "sampler3D"
-             << "samplerCube" << "sampler1DShadow" << "void"
-             << "sampler2DShadow" << "varying" << "const";
-
-    foreach(QString pattern, keywords)
-    {
-        rule.pattern = QRegExp("\\b" + pattern + "\\b");
-        rule.format = kwordsFormat;
-        highlightingRules.append(rule);
-    }
+    // #TODO: these should be customizabile
+    keywordsFormat.setForeground(Qt::blue);
 
     builtinsFormat.setForeground(Qt::magenta);
-    QStringList builtins;
-    builtins << "gl_Position" << "gl_Vertex" << "gl_Normal" << "gl_Color" << "gl_TexCoord"
-             << "gl_Clip(Size|Vertex)" << "gl_MultiTexCoord[0-7]"
-             << "gl_(Front|Back|Frag|Secondary)Color" << "gl_(Front|Back)SecondaryColor"
-             << "gl_Fog" << "gl_(Fog|Point)Coord" << "gl_FragCoord" << "gl_FogFragCoord"
-             << "gl_Frag(Data|Depth)" << "gl_FrontFacing"
-             << "gl_ModelViewMatrix" << "gl_ProjectionMatrix"
-             << "gl_ModelViewProjectionMatrix" << "gl_ModelViewMatrixInverse"
-             << "gl_ModelViewProjectionMatrixInverse" << "gl_NormalMatrix"
-             << "gl_NormalScale" << "gl_DepthRange" << "gl_Point"
-             << "gl_ModelViewMatrixInverseTranspose" << "gl_LightSource"
-             << "gl_ModelViewMatrixTranspose" << "gl_ProjectionMatrixTranspose"
-             << "gl_ModelViewProjectionMatrixInverseTranspose" 
-             << "gl_ClipPlane" << "gl_(Eye|Object)Plane[STRQ]"
-             << "gl_(Front|Back)Material" << "gl_(Front|Back)LightProduct";
 
-    foreach(QString pattern, builtins)
-    {
-        rule.pattern = QRegExp("\\b" + pattern + "\\b");
-        rule.format = builtinsFormat;
-        highlightingRules.append(rule);
-    }
-
-    functionFormat.setForeground(QColor::fromRgb(255, 0, 141));
-    QStringList functions;
-    functions << "sin" << "cos" << "tan" << "asin" << "acos" << "atan"
-              << "radians" << "degrees" << "pow" << "exp" << "log"
-              << "expr2" << "log2" << "sqrt" << "inversesqrt" << "abs"
-              << "ceil" << "clamp" << "floor" << "fract" << "min" << "mix"
-              << "max" << "mod" << "sign" << "smoothstep" << "step"
-              << "ftransform" << "cross" << "distance" << "dot"
-              << "faceforward" << "length" << "normalize" << "reflect"
-              << "dFdx" << "dFdy" << "fwidth" << "matrixCompMult" << "all"
-              << "any" << "equal" << "greaterThan" << "lessThan" << "notEqual"
-              << "texture1DProj" << "texture2DProj" << "texture3DProj"
-              << "textureCube" << "noise4" << "texture3D" << "not" << "noise3"
-              << "texture1D" << "texture2D" << "noise1" << "noise2";
-
-    foreach(QString pattern, functions)
-    {
-        rule.pattern = QRegExp("\\b" + pattern + "+(?=\\()");
-        rule.format = functionFormat;
-        highlightingRules.append(rule);
-    }
-
-    singleLineCommentFormat.setForeground(Qt::darkGreen);
-    rule.pattern = QRegExp("//[^\n]*");
-    rule.format = singleLineCommentFormat;
-    highlightingRules.append(rule);
-
-    multiLineCommentFormat = singleLineCommentFormat;
-    commentStartExpression = QRegExp("/\\*");
-    commentEndExpression = QRegExp("\\*/");
+    functionFormat.setForeground(Qt::darkMagenta);
+    functionFormat.setFontWeight(QFont::Bold);
 
     preprocessorFormat.setForeground(Qt::darkGreen);
-    rule.pattern = QRegExp("^\\s*#[^\n]*");
-    rule.format = preprocessorFormat;
-    highlightingRules.append(rule);
+    
+    commentFormat.setForeground(Qt::darkGreen);
+    commentFormat.setFontItalic(true);
+    
+
+
+
+    // flow control
+    QStringList keywords{ "if", "for", "switch", "while", "break", "case", "continue", "default", "discard", "do", "else", "return" };
+
+    // types
+    keywords << QStringList{ "void", "bool", "int", "uint", "float", "double", "atomic_uint", "struct",
+                             "(d|b|i|u)?vec[2-4]", "(d)?mat[2-4]", "(d)?mat2x[2-4]", "(d)?mat3x[2-4]", "(d)?mat4x[2-4]",
+                             "(i|u)?(sampler|image)([1-3]D|Cube(Array|(Array)?Shadow)?|(2DRect|[1-2]D(Array)?)(Shadow)?|Buffer|2DMS(Array)?)" };
+
+    // qualifiers
+    keywords << QStringList{ "layout", "attribute", "uniform", "varying", "const", "(in|(in)?out)", "sampler",
+                             "coherent", "volatile", "restrict", "readonly", "writeonly", "invariant",
+                             "centroid", "patch", "flat", "noperspective", "smooth" };
+
+    // builtin attributes
+    QStringList builtins{ "gl_((Texture|ModelView|(ModelView)?Projection)Matrix(Inverse|(Inverse)?Transpose)?)",
+                          "gl_((Eye|Object)Plane(Q|R|S|T)|Frag(Color|Coord|Dat|Depth))",
+                          "gl_(Back|Front)Light(Model)?Product", "gl_((Back|Front)?(Secondary)?|TextureEnv)Color",
+                          "gl_(Vertex(ID)?|TexCoord|InstanceID|PrimitiveIDIn|Position|Point(Coord|Parameters|Size)?|PointSize|Layer|Fog((Frag)?Coord|Parameters)?)",
+                          "gl_(Light((Source|Model)(Parameters)?|(Model)?Products))",
+                          "gl_(Clip(Plane|Distance|Vertex)|(Back|Front)Material|DepthRange(Parameters)?|Normal(Matrix|Scale)?)",
+                          "gl_(FrontFacing|MaterialParameters|MultiTexCoord[0-7])" };
+
+    // functions
+    QStringList functions{ "texture([1-3]D(Lod|Proj(Lod)?)?|Cube(Lod)?)?)|(shadow[1-2]D(Lod|Proj(Lod)?)?",
+                           "ceil", "clamp", "floor", "fract", "min", "max", "mix", "mod", "sign", "abs",
+                           "sin", "cos", "tan", "asin", "acos", "atan", "radians", "degrees",
+                           "pow", "((exp|log)(2)?)", "(inverse)?sqrt", "noise[1-4]",
+                           "smoothstep", "step", "outerProduct", "ftransform", "cross", "distance", "dot",
+                           "transpose", "faceforward", "length", "normalize", "reflect", "refract",
+                           "dFdx", "dFdy", "fwidth", "matrixCompMult", "all", "any", "equal", "not",
+                           "((greater|less)Than(Equal)?)" , "notEqual" };
+    
+    //
+    // register all parsing rules
+    //
+    highlightingRules.append({ QRegExp("//[^\n]*"), commentFormat });
+
+    highlightingRules.append({ QRegExp("^\\s*#[^\n]*"), preprocessorFormat });
+
+    foreach(QString pattern, keywords)  { highlightingRules.append({ QRegExp("\\b" + pattern + "\\b"),      keywordsFormat }); }
+    
+    foreach(QString pattern, builtins)  { highlightingRules.append({ QRegExp("\\b" + pattern + "\\b"),      builtinsFormat }); }
+    
+    foreach(QString pattern, functions) { highlightingRules.append({ QRegExp("\\b" + pattern + "+(?=\\()"), functionFormat }); }
 }
 
 void GLSLSyntaxHlighter::highlightBlock(const QString &text)
@@ -120,7 +102,10 @@ void GLSLSyntaxHlighter::highlightBlock(const QString &text)
         }
     }
 
-    /* multiline comment management */
+    // multiline comment management
+    QRegExp commentStartExpression("/\\*");
+    QRegExp commentEndExpression("\\*/");
+
     setCurrentBlockState(0);
 
     int startIndex = 0;
@@ -144,7 +129,7 @@ void GLSLSyntaxHlighter::highlightBlock(const QString &text)
             commentLength = endIndex - startIndex + commentEndExpression.matchedLength();
         }
 
-        setFormat(startIndex, commentLength, multiLineCommentFormat);
+        setFormat(startIndex, commentLength, commentFormat);
         startIndex = text.indexOf(commentStartExpression, startIndex + commentLength);
     }
 }
