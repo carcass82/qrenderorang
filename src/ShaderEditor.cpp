@@ -100,6 +100,11 @@ void ShaderEditor::lineNumberAreaPaintEvent(QPaintEvent* event)
     QPainter painter(lineNumberArea);
     painter.fillRect(event->rect(), Qt::lightGray);
 
+    QFont defaultFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+    
+    QFont boldFont = defaultFont;
+    boldFont.setBold(true);
+
     QTextBlock block = firstVisibleBlock();
     int blockNumber = block.blockNumber();
     int top = qRound(blockBoundingGeometry(block).translated(contentOffset()).top());
@@ -111,6 +116,7 @@ void ShaderEditor::lineNumberAreaPaintEvent(QPaintEvent* event)
         {
             QString number = QString::number(blockNumber + 1);
             painter.setPen(Qt::black);
+            painter.setFont(blockNumber == textCursor().blockNumber()? boldFont : defaultFont);
             painter.drawText(0, top, lineNumberArea->width(), fontMetrics().height(), Qt::AlignRight, number);
         }
 
