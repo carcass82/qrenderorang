@@ -25,6 +25,7 @@
 
 #include <QPainter>
 #include <QTextBlock>
+#include <QSCrollBar>
 
 ShaderEditor::ShaderEditor(QWidget* parent)
 	: QPlainTextEdit(parent)
@@ -33,6 +34,7 @@ ShaderEditor::ShaderEditor(QWidget* parent)
 
     connect(this, &ShaderEditor::blockCountChanged, this, &ShaderEditor::updateLineNumberAreaWidth);
     connect(this, &ShaderEditor::updateRequest,     this, &ShaderEditor::updateLineNumberArea);
+    connect(this, &ShaderEditor::selectionChanged,  this, [this]() { findText(textCursor().selectedText()); });
 
     updateLineNumberAreaWidth(0);
 }
@@ -117,4 +119,34 @@ void ShaderEditor::lineNumberAreaPaintEvent(QPaintEvent* event)
         bottom = top + qRound(blockBoundingRect(block).height());
         ++blockNumber;
     }
+}
+
+void ShaderEditor::findText(const QString& text, const QColor& findColor)
+{
+    blockSignals(true); // avoid triggering recursive "selectionChanged"
+    {
+        QList<QTextEdit::ExtraSelection> extraSelections;
+
+        QTextCursor originalCursor(textCursor());
+        int originalScrollPosition = verticalScrollBar()->value();
+
+        QTextCursor searchCursor(textCursor());
+        searchCursor.movePosition(QTextCursor::Start);
+        setTextCursor(searchCursor);
+
+        while (find(text, QTextDocument::FindWholeWords))
+        {
+            QTextEdit::ExtraSelection selection;
+            selection.format.setBackground(findColor);
+            selection.format.setProperty(QTextFormat::FullWidthSelection, false);
+            selection.cursor = textCursor();
+            extraSelections.append(selection);
+        }
+        
+        setTextCursor(originalCursor);
+        verticalScrollBar()->setValue(originalScrollPosition);
+
+        setExtraSelections(extraSelections);
+    }
+    blockSignals(false);
 }

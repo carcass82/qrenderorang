@@ -39,7 +39,8 @@ public:
     void lineNumberAreaPaintEvent(QPaintEvent* event);
     int lineNumberAreaWidth();
 
-    void highlightLine(const QSet<int>& lineNumbers, const QColor& highlightColor = QColor(255, 85, 85));
+    void findText(const QString& text, const QColor& findColor = QColor(Qt::yellow).lighter());
+    void highlightLine(const QSet<int>& lineNumbers, const QColor& highlightColor = QColor(Qt::red).lighter());
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
