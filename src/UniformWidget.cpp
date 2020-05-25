@@ -409,7 +409,11 @@ void UniformWidget::updateNameAndType()
 
 void UniformWidget::chooseColor(const QColor& newColor)
 {
-	const QColor color = newColor.isValid()? newColor : QColorDialog::getColor(ui.uniformColorPreview->palette().background().color(), this, "Select Color", QColorDialog::ShowAlphaChannel);
+	const QColor color = newColor.isValid()? newColor : QColorDialog::getColor(ui.uniformColorPreview->palette().background().color(),
+																			   this,
+																			   "Select Color",
+																			   QColorDialog::ShowAlphaChannel);
+
 	if (color.isValid())
 	{
 		float luma = yuv(vec3(color.redF(), color.greenF(), color.blueF())).x;
@@ -428,7 +432,10 @@ void UniformWidget::chooseTexture(const QString& path)
 	QString imagePath(path);
 	if (path.isEmpty())
 	{
-		imagePath = QFileDialog::getOpenFileName(this, tr("Open Image"), QString(), tr("Images (*.jpg *.png *.tga *.bmp *.psd *.gif *.hdr *.pic *.png);;All files (*.*)"));
+		imagePath = QFileDialog::getOpenFileName(this,
+												 tr("Open Image"),
+												 QString(),
+												 tr("Images (*.jpg *.png *.tga *.bmp *.psd *.gif *.hdr *.pic *.png);;All files (*.*)"));
 	}
 
 	QPalette filePathColor(QApplication::palette(ui.uniformTexturePath));

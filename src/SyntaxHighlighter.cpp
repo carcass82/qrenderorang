@@ -66,11 +66,11 @@ GLSLSyntaxHlighter::GLSLSyntaxHlighter(QTextDocument* parent)
 
     // functions
     QStringList functions{ "texture([1-3]D(Lod|Proj(Lod)?)?|Cube(Lod)?)?)|(shadow[1-2]D(Lod|Proj(Lod)?)?",
-                           "ceil", "clamp", "floor", "fract", "min", "max", "mix", "mod", "sign", "abs",
-                           "sin", "cos", "tan", "asin", "acos", "atan", "radians", "degrees",
-                           "pow", "((exp|log)(2)?)", "(inverse)?sqrt", "noise[1-4]",
+                           "ceil", "clamp", "floor", "fract", "trunc", "min", "max", "mix", "(mod(f)?)", "sign", "abs",
+                           "sin", "cos", "tan", "asin", "acos", "atan", "asinh", "acosh", "atanh" "radians", "degrees", "is(inf|nan)",
+                           "pow", "((exp|log)(2)?)", "(inverse)?sqrt", "noise[1-4]", "(round(Even)?)",
                            "smoothstep", "step", "outerProduct", "ftransform", "cross", "distance", "dot",
-                           "transpose", "faceforward", "length", "normalize", "reflect", "refract",
+                           "transpose", "inverse", "determinant", "faceforward", "length", "normalize", "reflect", "refract",
                            "dFdx", "dFdy", "fwidth", "matrixCompMult", "all", "any", "equal", "not",
                            "((greater|less)Than(Equal)?)" , "notEqual" };
     
@@ -132,4 +132,25 @@ void GLSLSyntaxHlighter::highlightBlock(const QString &text)
         setFormat(startIndex, commentLength, commentFormat);
         startIndex = text.indexOf(commentStartExpression, startIndex + commentLength);
     }
+
+    storeParenthesesData(text);
+}
+
+void GLSLSyntaxHlighter::storeParenthesesData(const QString& text)
+{
+    const QVector<char> parentheses({ '(', ')', '{', '}', '[', ']' });
+
+    TextBlockData* data = new TextBlockData;
+
+    foreach(auto parenthesis, parentheses)
+    {
+        int findPos = text.indexOf(parenthesis);
+        while (findPos != -1)
+        {
+            data->parentheses.append({ parenthesis, findPos });
+            findPos = text.indexOf(parenthesis, findPos + 1);
+        }
+    }
+
+    setCurrentBlockUserData(data);   
 }

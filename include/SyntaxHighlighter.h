@@ -33,6 +33,8 @@ protected:
     void highlightBlock(const QString& text);
 
 private:
+    void storeParenthesesData(const QString& text);
+
     struct HighlightingRule
     {
         QRegExp pattern;
@@ -45,4 +47,16 @@ private:
     QTextCharFormat functionFormat;
     QTextCharFormat preprocessorFormat;
     QTextCharFormat commentFormat;
+};
+
+class TextBlockData : public QTextBlockUserData
+{
+public:
+    struct ParenthesisInfo
+    {
+        char character;
+        int position;
+    };
+
+    QVector<ParenthesisInfo> parentheses;
 };

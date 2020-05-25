@@ -22,6 +22,7 @@
  *                                                                          *
  ****************************************************************************/
 #include "ShaderEditor.h"
+#include "SyntaxHighlighter.h"
 
 #include <QPainter>
 #include <QTextBlock>
@@ -32,9 +33,9 @@ ShaderEditor::ShaderEditor(QWidget* parent)
 {
     lineNumberArea = new LineNumberArea(this);
 
-    connect(this, &ShaderEditor::blockCountChanged, this, &ShaderEditor::updateLineNumberAreaWidth);
-    connect(this, &ShaderEditor::updateRequest,     this, &ShaderEditor::updateLineNumberArea);
-    connect(this, &ShaderEditor::selectionChanged,  this, [this]() { findText(textCursor().selectedText()); });
+    connect(this, &ShaderEditor::blockCountChanged,     this, &ShaderEditor::updateLineNumberAreaWidth);
+    connect(this, &ShaderEditor::updateRequest,         this, &ShaderEditor::updateLineNumberArea);
+    connect(this, &ShaderEditor::cursorPositionChanged, this, &ShaderEditor::updateHighlighting);
 
     updateLineNumberAreaWidth(0);
 }
@@ -82,7 +83,7 @@ void ShaderEditor::highlightLine(const QSet<int>& lineNumbers, const QColor& hig
     QList<QTextEdit::ExtraSelection> extraSelections;
 
     QColor lineColor = highlightColor;
-    for (int lineNumber : lineNumbers)
+    foreach (int lineNumber, lineNumbers)
     {
         QTextEdit::ExtraSelection selection;
         selection.format.setBackground(lineColor);
@@ -127,28 +128,76 @@ void ShaderEditor::lineNumberAreaPaintEvent(QPaintEvent* event)
     }
 }
 
-void ShaderEditor::findText(const QString& text, const QColor& findColor)
+void ShaderEditor::updateHighlighting()
 {
-    blockSignals(true); // avoid triggering recursive "selectionChanged"
+    // #TODO: these also should be customizabile
+    QTextCharFormat matchParenthesesFormat;
+    matchParenthesesFormat.setBackground(Qt::lightGray);
+    matchParenthesesFormat.setFontWeight(QFont::Bold);
+
+    QTextCharFormat missingParenthesisFormat;
+    missingParenthesisFormat.setForeground(Qt::red);
+    matchParenthesesFormat.setFontWeight(QFont::Bold);
+
+    QTextCharFormat selectedWordMatchFormat;
+    selectedWordMatchFormat.setBackground(QColor(Qt::yellow).lighter());
+
+
+    blockSignals(true); // avoid triggering recursive selectionChanged / cursorChanged
     {
         QList<QTextEdit::ExtraSelection> extraSelections;
 
         QTextCursor originalCursor(textCursor());
         int originalScrollPosition = verticalScrollBar()->value();
 
-        QTextCursor searchCursor(textCursor());
-        searchCursor.movePosition(QTextCursor::Start);
-        setTextCursor(searchCursor);
-
-        while (find(text, QTextDocument::FindWholeWords))
+        if (auto userData = static_cast<TextBlockData*>(textCursor().block().userData()))
         {
-            QTextEdit::ExtraSelection selection;
-            selection.format.setBackground(findColor);
-            selection.format.setProperty(QTextFormat::FullWidthSelection, false);
-            selection.cursor = textCursor();
-            extraSelections.append(selection);
+            foreach(auto parenthesis, userData->parentheses)
+            {
+                int curPos = textCursor().position() - textCursor().block().position() - 1;
+                if (parenthesis.position == curPos)
+                {
+                    if ((parenthesis.character == '(' && find(")")) ||
+                        (parenthesis.character == '{' && find("}")) ||
+                        (parenthesis.character == '[' && find("]")) ||
+                        (parenthesis.character == ')' && find("(", QTextDocument::FindBackward)) ||
+                        (parenthesis.character == '}' && find("{", QTextDocument::FindBackward)) ||
+                        (parenthesis.character == ']' && find("[", QTextDocument::FindBackward)))
+                    {
+                        QTextEdit::ExtraSelection selection;
+                        selection.format = matchParenthesesFormat;
+                        selection.cursor = textCursor();
+                        extraSelections.append(selection);
+                    }
+                    else
+                    {
+                        QTextEdit::ExtraSelection selection;
+                        selection.format = missingParenthesisFormat;
+                        selection.cursor = QTextCursor(originalCursor);
+                        selection.cursor.clearSelection();
+                        selection.cursor.movePosition(QTextCursor::PreviousCharacter, QTextCursor::KeepAnchor);
+                        extraSelections.append(selection);
+                    }
+                }
+            }
         }
-        
+
+        QString text = textCursor().selectedText();
+        if (text.size() > 1)
+        {
+            QTextCursor searchCursor(textCursor());
+            searchCursor.movePosition(QTextCursor::Start);
+            setTextCursor(searchCursor);
+
+            while (find(text, QTextDocument::FindWholeWords))
+            {
+                QTextEdit::ExtraSelection selection;
+                selection.format = selectedWordMatchFormat;
+                selection.cursor = textCursor();
+                extraSelections.append(selection);
+            }
+        }
+
         setTextCursor(originalCursor);
         verticalScrollBar()->setValue(originalScrollPosition);
 

@@ -39,7 +39,6 @@ public:
     void lineNumberAreaPaintEvent(QPaintEvent* event);
     int lineNumberAreaWidth();
 
-    void findText(const QString& text, const QColor& findColor = QColor(Qt::yellow).lighter());
     void highlightLine(const QSet<int>& lineNumbers, const QColor& highlightColor = QColor(Qt::red).lighter());
 
 protected:
@@ -48,6 +47,7 @@ protected:
 private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
     void updateLineNumberArea(const QRect& rect, int dy);
+    void updateHighlighting();
 
 private:
 
