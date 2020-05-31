@@ -1,3 +1,7 @@
+lessThan(QT_MAJOR_VERSION, 5) {
+    error("Need at least Qt5, found Qt$${QT_VERSION}")
+}
+
 CONFIG             *= c++17 qt debug_and_release
 
 TEMPLATE            = app

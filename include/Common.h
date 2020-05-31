@@ -37,6 +37,7 @@ using cc::math::pmin;
 using cc::math::pmax;
 using cc::math::max;
 using cc::math::min;
+using cc::math::clamp;
 using cc::math::radians;
 using cc::math::translate;
 using cc::math::rotate;
@@ -52,7 +53,7 @@ using cc::yuv::yuv;
 //
 //
 
-struct Vertex
+struct vertex_t
 {
     vec3 pos;
     vec3 normal;
@@ -61,6 +62,7 @@ struct Vertex
     vec3 bitangent;
 };
 
+using Vertex = vertex_t;
 using Index = uint32_t;
 
 //
@@ -105,7 +107,7 @@ public:
 
     QSet<int> error(const QString& log)
     {
-        static const QRegExp lineNumberFinder(R"pattern(0\((\d+)\) : error)pattern");
+        static const QRegExp lineNumberFinder(R"re(0\((\d+)\) : error)re");
 
         QSet<int> foundLines;
         int pos = 0;
@@ -120,12 +122,18 @@ public:
 
     void vserror(const QString& log)
     {
-        outputVS->highlightLine(error(log));
+        if (Q_LIKELY(outputVS))
+        {
+            outputVS->highlightLine(error(log));
+        }
     }
 
     void fserror(const QString& log)
     {
-        outputFS->highlightLine(error(log));
+        if (Q_LIKELY(outputFS))
+        {
+            outputFS->highlightLine(error(log));
+        }
     }
 
 private:

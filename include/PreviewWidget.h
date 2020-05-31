@@ -72,17 +72,19 @@ protected:
 private:
     void renderText(const vec2& textPos, const QString& text, const vec4& color = vec4(255), const QFont& font = QFontDatabase::systemFont(QFontDatabase::FixedFont));
     void updateMaterialParameters(GLuint program);
+    void resetUpdateMaterialFlag();
     void activateShader(GLuint sp);
     void deactivateShader();
     void drawMesh();
     void updateMesh();
+    void drawSky();
     void updateShader();
     void updateResources();
     bool buildShader(const QString& vs, const QString& fs, GLuint& outSP, QString& log);
     void resetTransforms();
     void updateMatrices();
 
-    vec3 m_CameraPos;
+    float m_CameraDistance;
     Qt::MouseButton m_button;
     QPoint m_pos;
     QPoint m_delta;
@@ -104,6 +106,7 @@ private:
 
     GLuint m_SP = 0;
     GLuint m_UnlitSP = 0;
+    GLuint m_SkySP = 0;
 
     bool m_uploadMaterialParams = false;
     QHash<QString, GLuint> textureParams;
@@ -184,6 +187,11 @@ inline bool PreviewWidget::toggleUnlit()
 inline bool PreviewWidget::unlit() const
 {
     return m_Unlit;
+}
+
+inline void PreviewWidget::resetUpdateMaterialFlag()
+{
+    m_uploadMaterialParams = false;
 }
 
 inline void PreviewWidget::setShaderResource(const QString& parameter, const char* pixels, int width, int height, int bpp, bool sRGB)

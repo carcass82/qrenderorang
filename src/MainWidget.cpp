@@ -119,14 +119,21 @@ uniform struct
     mat3 normal;
 } matrix;
 
+uniform struct
+{
+    vec3 camera; // camera (world)
+    vec2 window; // viewport size
+} data;
+
 void main()
 {
 	gl_Position = matrix.MVP * vec4(position, 1);
 })vs");
 
     m_textFrag->setPlainText(R"fs(#version 330
-
 out vec4 outColor;
+
+uniform sampler2D sky; // setting a valid sampler will also set skybox
 
 void main()
 {

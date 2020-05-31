@@ -36,14 +36,26 @@ PreviewWidget::PreviewWidget(QSurfaceFormat format, QWidget* parent)
 
 void PreviewWidget::resetTransforms()
 {
-    m_CameraPos = vec3(.0f, .0f, 2.f);
+    m_CameraDistance = 2.f;
     m_delta = QPoint();
 }
 
 void PreviewWidget::updateMatrices()
 {
-    vec3 eye = m_CameraPos;
-    vec3 center(.0f, .0f, .0f);
+    m_CameraDistance = max(1.f, m_CameraDistance);
+    m_delta.setY(clamp(m_delta.y(), -89, 89));
+
+    float phi = 90 + m_delta.x();
+    float theta = m_delta.y();
+    float radius = m_CameraDistance;
+
+    vec3 eye;
+    eye.x = cosf(radians(phi)) * cosf(radians(theta));
+    eye.y = sinf(radians(theta));
+    eye.z = sinf(radians(phi)) * cosf(radians(theta));
+    eye *= radius;
+    
+    vec3 center(.0f, .0f, 0.f);
     vec3 up(.0f, 1.f, .0f);
 
     m_ViewMatrix = lookAt(eye, center, up);
@@ -51,11 +63,9 @@ void PreviewWidget::updateMatrices()
     m_ModelMatrix = mat4(1.f);
     if (m_Mesh)
     {
-        vec3 tocenter = -(m_Mesh->center());
+        vec3 tocenter = center - m_Mesh->center();
         float normalizefactor = 1.f / max(m_Mesh->size().x, max(m_Mesh->size().y, m_Mesh->size().z));
-
-        m_ModelMatrix = rotate(m_ModelMatrix, radians(m_delta.y()), vec3{ 1.0f, 0.0f, 0.0f });
-        m_ModelMatrix = rotate(m_ModelMatrix, radians(m_delta.x()), vec3{ 0.0f, 1.0f, 0.0f });
+                
         m_ModelMatrix = scale(m_ModelMatrix, vec3(normalizefactor));
         m_ModelMatrix = translate(m_ModelMatrix, tocenter);
     }
@@ -63,6 +73,10 @@ void PreviewWidget::updateMatrices()
     m_ModelViewMatrix = m_ViewMatrix * m_ModelMatrix;
     m_NormalMatrix = mat3(transpose(inverse(m_ModelViewMatrix)));
     m_ModelViewProjectionMatrix = m_ProjectionMatrix * m_ModelViewMatrix;
+
+
+    setShaderParameter("data.camera", eye);
+    setShaderParameter("data.window", vec2(width(), height()));
 
     setShaderParameter("matrix.model", m_ModelMatrix);
     setShaderParameter("matrix.view", m_ViewMatrix);
@@ -101,10 +115,45 @@ void PreviewWidget::initializeGL()
                       out vec4 outColor;
                       void main() { outColor = vec4(1,1,1,1); })fs";
 
+    QString skyVS = R"vs(#version 330
+                         uniform struct { mat4 view; mat4 projection; } matrix;
+                         out vec3 texCoords;
+                         void main()
+                         {
+                             const vec3 vertices[3] = vec3[3](vec3(-1,-1,0), vec3(3,-1,0), vec3(-1,3,0));
+                             vec3 position = vertices[gl_VertexID];
+
+                             texCoords = inverse(mat3(matrix.view)) * (inverse(matrix.projection) * vec4(position,1)).xyz;
+                             gl_Position = vec4(position.xy,1,1);
+                         })vs";
+
+    QString skyFS = R"fs(#version 330
+                      out vec4 outColor;
+                      in vec3 texCoords;
+                      uniform sampler2D sky;
+
+                      const float PI = 3.1415926538;
+                      const float PI2 = 2 * PI;
+                      vec2 SampleSphericalMap(vec3 v)
+                      {
+                          return vec2(atan(v.z, v.x) / PI2, asin(v.y) / PI) + 0.5;
+                      }                      
+
+                      void main()
+                      {
+                          vec2 uv = SampleSphericalMap(normalize(texCoords));
+                          outColor = vec4(texture(sky, vec2(uv.x, 1 - uv.y)).rgb, 1);
+                      })fs";
+
     QString log;
     if (!buildShader(unlitVS, unlitFS, m_UnlitSP, log))
     {
         LOG(QString("Unlit Shader compilation FAILED: %1").arg(log));
+    }
+
+    if (!buildShader(skyVS, skyFS, m_SkySP, log))
+    {
+        LOG(QString("Sky Shader compilation FAILED: %1").arg(log));
     }
 
     m_Initialized = true;
@@ -144,15 +193,20 @@ void PreviewWidget::paintGL()
     glLoadMatrixf(value_ptr(m_ModelViewMatrix));
 
     glPolygonMode(GL_FRONT_AND_BACK, ((m_Wireframe)? GL_LINE : GL_FILL));
-    activateShader((m_Unlit? m_UnlitSP : m_SP));
+    
     if (m_Mesh)
     {
+        activateShader((m_Unlit? m_UnlitSP : m_SP));
         updateMaterialParameters(m_Unlit ? m_UnlitSP : m_SP);
         drawMesh();
+        deactivateShader();
     }
-    deactivateShader();
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
+    drawSky();
+
+    resetUpdateMaterialFlag();
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     renderText({ 0, 0 },
                QString("%1 %2 %3").arg(m_SP != 0? "" : "[Invalid Shader]", m_Wireframe ? "Wireframe" : "Fill", m_Unlit ? "Unlit" : "Lit"),
                { 255, 255, 0, 255 });
@@ -211,8 +265,10 @@ void PreviewWidget::updateMesh()
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        glDeleteBuffers(1, &vb);
-        glDeleteBuffers(1, &ib);
+        
+        // #TODO: check if buffers can be "deleted" here or not
+        //glDeleteBuffers(1, &vb);
+        //glDeleteBuffers(1, &ib);
 
         std::swap(m_VAO, vao);
         glDeleteVertexArrays(1, &vao);
@@ -356,12 +412,10 @@ void PreviewWidget::updateResources()
                      GL_UNSIGNED_BYTE,
                      request.textureData.constData());
 
-        glGenerateMipmap(GL_TEXTURE_2D);
-        
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
         setShaderParameter(request.textureName, newTexture);
     }
@@ -411,8 +465,6 @@ void PreviewWidget::updateMaterialParameters(GLuint program)
         {
             glUniformMatrix4fv(glGetUniformLocation(program, qPrintable(it.key())), 1, GL_FALSE, value_ptr(it.value()));
         }
-
-        m_uploadMaterialParams = false;
     }
 }
 
@@ -438,6 +490,19 @@ void PreviewWidget::drawMesh()
     glBindVertexArray(m_VAO);
     glDrawElements(GL_TRIANGLES, (GLsizei)m_Mesh->numIndices(), GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
+}
+
+void PreviewWidget::drawSky()
+{
+    glUseProgram(m_SkySP);
+    updateMaterialParameters(m_SkySP);
+    
+    // no need for geometry data, vertex positions are procedurally generated in VS
+    // see: https://stackoverflow.com/a/59739538
+    glBindVertexArray(0);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    glUseProgram(0);
 }
 
 //
@@ -472,7 +537,7 @@ void PreviewWidget::mouseReleaseEvent(QMouseEvent* e)
 
 void PreviewWidget::wheelEvent(QWheelEvent* e)
 {
-    m_CameraPos.z -= (m_CameraPos.z * e->delta() / 120.0f) / 20.0f;
+    m_CameraDistance += radians(e->angleDelta().y() / 8);
     updateMatrices();
     update();
 }
