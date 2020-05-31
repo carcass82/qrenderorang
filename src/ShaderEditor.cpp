@@ -24,6 +24,7 @@
 #include "ShaderEditor.h"
 #include "SyntaxHighlighter.h"
 
+#include <QApplication>
 #include <QPainter>
 #include <QTextBlock>
 #include <QScrollBar>
@@ -99,7 +100,7 @@ void ShaderEditor::highlightLine(const QSet<int>& lineNumbers, const QColor& hig
 void ShaderEditor::lineNumberAreaPaintEvent(QPaintEvent* event)
 {
     QPainter painter(lineNumberArea);
-    painter.fillRect(event->rect(), Qt::lightGray);
+    painter.fillRect(event->rect(), QApplication::palette(lineNumberArea).background());
 
     QFont defaultFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     
@@ -116,7 +117,7 @@ void ShaderEditor::lineNumberAreaPaintEvent(QPaintEvent* event)
         if (block.isVisible() && bottom >= event->rect().top())
         {
             QString number = QString::number(blockNumber + 1);
-            painter.setPen(Qt::black);
+            painter.setPen(QApplication::palette(lineNumberArea).foreground().color());
             painter.setFont(blockNumber == textCursor().blockNumber()? boldFont : defaultFont);
             painter.drawText(0, top, lineNumberArea->width(), fontMetrics().height(), Qt::AlignCenter, number);
         }
