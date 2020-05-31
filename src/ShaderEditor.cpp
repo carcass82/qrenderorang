@@ -26,7 +26,7 @@
 
 #include <QPainter>
 #include <QTextBlock>
-#include <QSCrollBar>
+#include <QScrollBar>
 
 ShaderEditor::ShaderEditor(QWidget* parent)
 	: QPlainTextEdit(parent)
