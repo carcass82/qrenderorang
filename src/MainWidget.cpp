@@ -65,14 +65,7 @@ MainWidget::MainWidget(QWidget* parent)
 
 void MainWidget::setupGLPreview()
 {
-    QSurfaceFormat glFormat;
-    glFormat.setVersion(3, 3);
-    glFormat.setProfile(QSurfaceFormat::CompatibilityProfile);
-    glFormat.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-    glFormat.setColorSpace(QSurfaceFormat::sRGBColorSpace);
-    glFormat.setSamples(4);
-    
-	glWidget = new PreviewWidget(glFormat, this);
+    glWidget = new PreviewWidget(this);
     glWidget->makeCurrent();
 
 	ui.frameGLPreview->setLayout(new QGridLayout());

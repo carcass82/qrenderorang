@@ -34,7 +34,7 @@ class Material;
 class PreviewWidget : public QOpenGLWidget, protected QOpenGLFunctions_3_3_Compatibility
 {
 public:
-    PreviewWidget(QSurfaceFormat format, QWidget *parent = 0);
+    PreviewWidget(QWidget *parent = 0);
     bool isInitialized() const;
     bool wireframe() const;
     bool toggleWireframe();
@@ -55,7 +55,7 @@ public:
     void setShaderParameter(const QString& parameter, const mat3& value, bool remove = false);
     void setShaderParameter(const QString& parameter, const mat4& value, bool remove = false);
     
-    void setShaderResource(const QString& parameter, const char* pixels, int width, int height, int bpp = 4, bool sRGB = true);
+    void setShaderResource(const QString& parameter, const char* pixels, int width, int height, int depth = 1, int bpp = 4, bool sRGB = true, bool HDR = false);
     void deleteShaderResource(const QString& parameter);
 
 protected:
@@ -71,6 +71,7 @@ protected:
 
 private:
     void renderText(const vec2& textPos, const QString& text, const vec4& color = vec4(255), const QFont& font = QFontDatabase::systemFont(QFontDatabase::FixedFont));
+    unsigned int resourceID(GLuint resource);
     void updateMaterialParameters(GLuint program);
     void resetUpdateMaterialFlag();
     void activateShader(GLuint sp);
@@ -80,6 +81,7 @@ private:
     void drawSky();
     void updateShader();
     void updateResources();
+    void bindResources();
     bool buildShader(const QString& vs, const QString& fs, GLuint& outSP, QString& log);
     void resetTransforms();
     void updateMatrices();
@@ -110,6 +112,7 @@ private:
 
     bool m_uploadMaterialParams = false;
     QHash<QString, GLuint> textureParams;
+    QHash<GLuint, unsigned int> resourceBindings;
     QHash<QString, float> floatParams;
     QHash<QString, vec2> vec2Params;
     QHash<QString, vec3> vec3Params;
@@ -127,8 +130,9 @@ private:
     struct TextureRequest
     {
         QString textureName;
-        vec2 textureSize;
+        vec3 textureSize;
         bool textureSRGB;
+        bool textureHDR;
         QByteArray textureData;
 
         bool remove;
@@ -194,7 +198,7 @@ inline void PreviewWidget::resetUpdateMaterialFlag()
     m_uploadMaterialParams = false;
 }
 
-inline void PreviewWidget::setShaderResource(const QString& parameter, const char* pixels, int width, int height, int bpp, bool sRGB)
+inline void PreviewWidget::setShaderResource(const QString& parameter, const char* pixels, int width, int height, int depth, int bpp, bool sRGB, bool HDR)
 {
     if (!parameter.isEmpty() && pixels && width > 0 && height > 0)
     {
@@ -202,8 +206,10 @@ inline void PreviewWidget::setShaderResource(const QString& parameter, const cha
         request.textureName = parameter;
         request.textureSize.x = width;
         request.textureSize.y = height;
-        request.textureData = QByteArray(pixels, width * height * bpp);
+        request.textureSize.z = depth;
+        request.textureData = QByteArray(pixels, width * height * depth * bpp * ((HDR)? sizeof(float) : sizeof(unsigned char)));
         request.textureSRGB = sRGB;
+        request.textureHDR = HDR;
         request.remove = false;
 
         m_textureRequests.push_back(request);
@@ -216,7 +222,7 @@ inline void PreviewWidget::deleteShaderResource(const QString& parameter)
 {
     if (textureParams.contains(parameter))
     {
-        m_textureRequests.push_back({ parameter, vec2(), false, QByteArray(), true });
+        m_textureRequests.push_back({ parameter, vec3(), false, false, QByteArray(), true });
         
         update();
     }

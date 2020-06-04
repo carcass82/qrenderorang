@@ -1,0 +1,44 @@
+{
+    "fs": "#version 330\nout vec4 outColor;\n\nuniform sampler2D sky;         // sky texture\nuniform sampler2D irradiance;  // irradiance map\nuniform float Ki;              // indirect contrib multiplier\nuniform float Kd;              // direct contrib multiplier\nuniform vec4 diffuseColor;     // object diffuse color\nuniform vec3 lightPos;         // light position in world coords\n\nin struct\n{\n\tvec3 position;\n\tvec3 normal;\n} VSOut;\n\nconst float PI = 3.1415926538;\nconst float PI2 = 2 * PI;\nvec2 SampleSphericalMap(vec3 v)\n{\n\treturn vec2(atan(v.z, v.x) / PI2, asin(v.y) / PI) + 0.5;\n}\n\nvec2 FlipV(vec2 uv)\n{\n\treturn vec2(uv.s, 1 - uv.t);\n}\n\nvoid main()\n{\n\tvec3 N = normalize(VSOut.normal);\n\tvec3 L = normalize(lightPos - VSOut.position);\n\n\tfloat NdotL = max(dot(N, L), 0.0);\n\n\tvec3 ambientColor = texture(irradiance, FlipV(SampleSphericalMap(N))).rgb;\n\n\tvec3 direct = Kd * diffuseColor.rgb * NdotL;\n\tvec3 indirect = Ki * diffuseColor.rgb * ambientColor;\n\n\toutColor = vec4(direct + indirect, 1);\n}",
+    "mesh": {
+        "path": "",
+        "type": 1
+    },
+    "uniforms": [
+        {
+            "flags": "sRGB",
+            "name": "sky",
+            "type": 7,
+            "value": "./textures/Road_to_MonumentValley_2k.jpg"
+        },
+        {
+            "flags": "RGB",
+            "name": "irradiance",
+            "type": 7,
+            "value": "./textures/Road_to_MonumentValley_irr.hdr"
+        },
+        {
+            "name": "Ki",
+            "type": 0,
+            "value": "1"
+        },
+        {
+            "name": "Kd",
+            "type": 0,
+            "value": "1"
+        },
+        {
+            "flags": "sRGB",
+            "name": "diffuseColor",
+            "type": 6,
+            "value": "#ffe6e6e6"
+        },
+        {
+            "name": "lightPos",
+            "type": 2,
+            "value": "0 0.5 -1"
+        }
+    ],
+    "version": "1",
+    "vs": "#version 330\nlayout (location = 0) in vec3 position;\nlayout (location = 1) in vec3 normal;\n\nuniform struct\n{\n\tmat4 model;\n    mat4 MVP;\n} matrix;\n\nout struct\n{\n\tvec3 position;\n\tvec3 normal;\n} VSOut;\n\nvoid main()\n{\n\tVSOut.position = vec3(matrix.model * vec4(position, 1.0));\n\tVSOut.normal = mat3(matrix.model) * normal;\n\n\tgl_Position = matrix.MVP * vec4(position, 1);\n}"
+}

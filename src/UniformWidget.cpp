@@ -308,12 +308,14 @@ void UniformWidget::updateShaderValue()
 	case Texture:
 	{
 		bool isSRGB = ui.uniformTextureSRGB->isChecked();
+		bool isHDR = !ui.uniformTextureSRGB->isEnabled();
 		auto texSize = ui.uniformTextureSize->text().split('x');
-		if (texSize.size() == 2 && !uniformTextureData.isEmpty())
+		if (texSize.size() >= 2 && !uniformTextureData.isEmpty())
 		{
 			int width = texSize[0].toInt();
 			int height = texSize[1].toInt();
-			GLWidget->setShaderResource(uniformName, uniformTextureData.constData(), width, height, 4, isSRGB);
+			int depth = (texSize.size() > 2? texSize[2].toInt() : 1);
+			GLWidget->setShaderResource(uniformName, uniformTextureData.constData(), width, height, depth, 4, isSRGB, isHDR);
 		}
 		break;
 	}
@@ -441,12 +443,23 @@ void UniformWidget::chooseTexture(const QString& path)
 	QPalette filePathColor(QApplication::palette(ui.uniformTexturePath));
 
 	int width, height, bpp;
-    unsigned char* pixels = stbi_load(qPrintable(imagePath), &width, &height, &bpp, 4);
-    if (pixels)
-    {
-		uniformTextureData = QByteArray(reinterpret_cast<const char*>(pixels), width * height * 4);
+	unsigned char* pixels = nullptr;
 
-        ui.uniformTexturePreview->setPixmap(QPixmap::fromImage(QImage(pixels, width, height, QImage::Format_RGBA8888).scaled(ui.uniformTexturePreview->size(), Qt::KeepAspectRatio)));
+	bool isHDR = stbi_is_hdr(qPrintable(imagePath));
+	pixels = ((isHDR)? (unsigned char*)stbi_loadf(qPrintable(imagePath), &width, &height, &bpp, 4) :
+	                                   stbi_load(qPrintable(imagePath), &width, &height, &bpp, 4));
+
+	if (pixels)
+    {
+		uniformTextureData = QByteArray(reinterpret_cast<const char*>(pixels), width * height * 4 * ((isHDR)? sizeof(float) : sizeof(unsigned char)));
+
+		unsigned char* preview_pixels = stbi_load(qPrintable(imagePath), &width, &height, &bpp, 4);
+
+        ui.uniformTexturePreview->setPixmap(QPixmap::fromImage(QImage(preview_pixels, width, height, QImage::Format_RGBA8888).scaledToWidth(ui.uniformTexturePreview->width())));
+		stbi_image_free(preview_pixels);
+
+		ui.uniformTextureSRGB->setEnabled(!isHDR);
+
 		ui.uniformTextureSize->setText(QString("%1x%2").arg(QString::number(width), QString::number(height)));
 
         stbi_image_free(pixels);

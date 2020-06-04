@@ -1,2 +1,3 @@
 - panorama images from: http://www.hdrlabs.com/sibl/archive.html
-- 'uv.png' is a color text grid generated using Blender (www.blender.org)
+- radiance/irradiance generated using cmftStudio (https://github.com/dariomanesku/cmftStudio)
+- uv tester generated using Blender (www.blender.org)

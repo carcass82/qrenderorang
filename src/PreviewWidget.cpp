@@ -28,10 +28,18 @@
 #include "ShaderEditor.h"
 #include "Mesh.h"
 
-PreviewWidget::PreviewWidget(QSurfaceFormat format, QWidget* parent)
+PreviewWidget::PreviewWidget(QWidget* parent)
     : QOpenGLWidget(parent)
 {
-    setFormat(format);
+    QSurfaceFormat glFormat;
+    glFormat.setVersion(3, 3);
+    glFormat.setProfile(QSurfaceFormat::CompatibilityProfile);
+    glFormat.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+    glFormat.setColorSpace(QSurfaceFormat::sRGBColorSpace);
+    glFormat.setSamples(4);
+
+    setFormat(glFormat);
+    setTextureFormat(GL_SRGB8_ALPHA8);
 }
 
 void PreviewWidget::resetTransforms()
@@ -194,6 +202,8 @@ void PreviewWidget::paintGL()
 
     glPolygonMode(GL_FRONT_AND_BACK, ((m_Wireframe)? GL_LINE : GL_FILL));
     
+    bindResources();
+
     if (m_Mesh)
     {
         activateShader((m_Unlit? m_UnlitSP : m_SP));
@@ -397,30 +407,63 @@ void PreviewWidget::updateResources()
             glDeleteTextures(1, &textureParams[request.textureName]);
         }
 
-        GLuint newTexture;
+        if (request.remove)
+        {
+            resourceBindings.remove(textureParams[request.textureName]);
+            textureParams.remove(request.textureName);
+        }
+        else
+        {
+            GLuint newTexture;
+            glGenTextures(1, &newTexture);
 
-        glGenTextures(1, &newTexture);
-        glBindTexture(GL_TEXTURE_2D, newTexture);
+            if (request.textureSize.z == 1)
+            {
+                GLint internalFormat = (request.textureHDR? GL_RGBA16F : (request.textureSRGB? GL_SRGB_ALPHA : GL_RGBA));
+                GLenum type = (request.textureHDR? GL_FLOAT : GL_UNSIGNED_BYTE);
 
-        glTexImage2D(GL_TEXTURE_2D,
-                     0,
-                     (request.textureSRGB? GL_SRGB_ALPHA : GL_RGBA),
-                     request.textureSize.x,
-                     request.textureSize.y,
-                     0,
-                     GL_RGBA,
-                     GL_UNSIGNED_BYTE,
-                     request.textureData.constData());
+                glBindTexture(GL_TEXTURE_2D, newTexture);
+                glTexImage2D(GL_TEXTURE_2D,
+                             0,
+                             internalFormat,
+                             request.textureSize.x,
+                             request.textureSize.y,
+                             0,
+                             GL_RGBA,
+                             type,
+                             request.textureData.constData());
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        setShaderParameter(request.textureName, newTexture);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            }
+
+            setShaderParameter(request.textureName, newTexture);
+        }
+
+        m_uploadMaterialParams = true;
     }
 
     m_textureRequests.clear();
+}
+
+void PreviewWidget::bindResources()
+{
+    unsigned int texUnit = 0;
+    for (auto it = textureParams.constBegin(); it != textureParams.constEnd(); ++it, ++texUnit)
+    {
+        glActiveTexture(GL_TEXTURE0 + texUnit);
+        glBindTexture(GL_TEXTURE_2D, it.value());
+
+        resourceBindings[it.value()] = texUnit;
+    }
+}
+
+unsigned int PreviewWidget::resourceID(GLuint resource)
+{
+    return resourceBindings.contains(resource)? resourceBindings[resource] : -1;
 }
 
 void PreviewWidget::updateMaterialParameters(GLuint program)
@@ -428,12 +471,9 @@ void PreviewWidget::updateMaterialParameters(GLuint program)
     if (m_uploadMaterialParams)
     {
         int texUnit = 0;
-        for (auto it = textureParams.constBegin(); it != textureParams.constEnd(); ++it)
+        for (auto it = textureParams.constBegin(); it != textureParams.constEnd(); ++it, ++texUnit)
         {
-            glActiveTexture(GL_TEXTURE0 + texUnit);
-            glBindTexture(GL_TEXTURE_2D, it.value());
-
-            glUniform1i(glGetUniformLocation(program, qPrintable(it.key())), texUnit);
+            glUniform1i(glGetUniformLocation(program, qPrintable(it.key())), resourceID(it.value()));
         }
 
         for (auto it = floatParams.constBegin(); it != floatParams.constEnd(); ++it)
@@ -537,7 +577,7 @@ void PreviewWidget::mouseReleaseEvent(QMouseEvent* e)
 
 void PreviewWidget::wheelEvent(QWheelEvent* e)
 {
-    m_CameraDistance += radians(e->angleDelta().y() / 8);
+    m_CameraDistance -= radians(e->angleDelta().y() / 8);
     updateMatrices();
     update();
 }
