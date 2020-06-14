@@ -15,7 +15,7 @@
             "flags": "RGB",
             "name": "irradiance",
             "type": 7,
-            "value": "./textures/Road_to_MonumentValley_irr.hdr"
+            "value": "./textures/Road_to_MonumentValley_irradiance.hdr"
         },
         {
             "name": "Ki",
