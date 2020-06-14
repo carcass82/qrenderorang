@@ -39,7 +39,7 @@ PreviewWidget::PreviewWidget(QWidget* parent)
     glFormat.setSamples(4);
 
     setFormat(glFormat);
-    setTextureFormat(GL_SRGB8_ALPHA8);
+    setTextureFormat(GL_SRGB_ALPHA);
 }
 
 void PreviewWidget::resetTransforms()
@@ -163,6 +163,19 @@ void PreviewWidget::initializeGL()
     {
         LOG(QString("Sky Shader compilation FAILED: %1").arg(log));
     }
+
+    // create a simple blue-ish gradient as default sky
+    constexpr int steps = 16;
+    QByteArray defaultSky;
+    for (int i = 0; i < steps; ++i)
+    {
+        defaultSky += (char)lerp( 5,  0, i / (float)steps);
+        defaultSky += (char)lerp( 5,  0, i / (float)steps);
+        defaultSky += (char)lerp(50, 20, i / (float)steps);
+        defaultSky += (char)255;
+    }
+    defaultSkyTexture.load((uint8_t*)defaultSky.constData(), defaultSky.size(), vec3{ 1, steps, 1 });
+    setShaderResource("sky", defaultSkyTexture, false);
 
     m_Initialized = true;
     LOG(QString("OpenGL initialized: %1 (%2)").arg((const char*)glGetString(GL_VERSION), (const char*)glGetString(GL_RENDERER)));
@@ -412,32 +425,50 @@ void PreviewWidget::updateResources()
             resourceBindings.remove(textureParams[request.textureName]);
             textureParams.remove(request.textureName);
         }
-        else
+        else if (request.texture)
         {
             GLuint newTexture;
             glGenTextures(1, &newTexture);
 
-            if (request.textureSize.z == 1)
+            if (request.texture->depth() == 1)
             {
-                GLint internalFormat = (request.textureHDR? GL_RGBA16F : (request.textureSRGB? GL_SRGB_ALPHA : GL_RGBA));
-                GLenum type = (request.textureHDR? GL_FLOAT : GL_UNSIGNED_BYTE);
-
                 glBindTexture(GL_TEXTURE_2D, newTexture);
-                glTexImage2D(GL_TEXTURE_2D,
-                             0,
-                             internalFormat,
-                             request.textureSize.x,
-                             request.textureSize.y,
-                             0,
-                             GL_RGBA,
-                             type,
-                             request.textureData.constData());
+
+                if (request.texture->compressed())
+                {
+                    glCompressedTexImage2D(GL_TEXTURE_2D,
+                                           0,
+                                           request.textureSRGB? request.texture->glsRGBFormat() : request.texture->glFormat(),
+                                           request.texture->width(),
+                                           request.texture->height(),
+                                           0,
+                                           request.texture->pixelsSize(),
+                                           request.texture->pixels());
+                }
+                else
+                {
+                    glTexImage2D(GL_TEXTURE_2D,
+                                 0,
+                                 request.textureSRGB? request.texture->glsRGBFormat() : request.texture->glFormat(),
+                                 request.texture->width(),
+                                 request.texture->height(),
+                                 0,
+                                 GL_RGBA,
+                                 request.texture->glDataType(),
+                                 request.texture->pixels());
+                }
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+                // read back as RGB for UI preview
+                unsigned char* rgba = new unsigned char[request.texture->width() * request.texture->height() * 4];
+                glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+                request.texture->onLoad(rgba);
+                delete[] rgba;
             }
 
             setShaderParameter(request.textureName, newTexture);
@@ -470,8 +501,7 @@ void PreviewWidget::updateMaterialParameters(GLuint program)
 {
     if (m_uploadMaterialParams)
     {
-        int texUnit = 0;
-        for (auto it = textureParams.constBegin(); it != textureParams.constEnd(); ++it, ++texUnit)
+        for (auto it = textureParams.constBegin(); it != textureParams.constEnd(); ++it)
         {
             glUniform1i(glGetUniformLocation(program, qPrintable(it.key())), resourceID(it.value()));
         }

@@ -22,58 +22,51 @@
  *                                                                          *
  ****************************************************************************/
 #pragma once
-#include <QColorDialog>
-#include <QFileDialog>
-#include <QJsonObject>
-
+#include <QOpenGLFunctions_3_3_Compatibility>
 #include "Common.h"
-#include "PreviewWidget.h"
-#include "Texture.h"
 
-#include "ui_uniform.h"
+template<class T>
+using OnTextureLoaded = std::function<void(const T&, const QImage&)>;
 
-class UniformWidget : public QWidget
+class Texture
 {
-    Q_OBJECT
-
 public:
-    enum UniformType { Float, Vec2, Vec3, Vec4, Mat3, Mat4, Color, Texture, MAX };
+	Texture();
+	~Texture();
 
-    UniformWidget(const QString& name, UniformType type, PreviewWidget* glWidget, QWidget* parent = nullptr);
-    
-	UniformWidget(PreviewWidget* glWidget)
-        : UniformWidget("", Float, glWidget)
-    {}
+	Texture(Texture&) = delete;
+	Texture(Texture&&) = delete;
 
-    ~UniformWidget();
+	Texture& operator=(Texture&) = delete;
+	Texture& operator=(Texture&&) = delete;
 
-    QJsonObject save() const;
-    void load(const QJsonObject& data);
+	bool load(const QString& filename, const OnTextureLoaded<Texture>& callback = [](const Texture&, const QImage&){});
+	bool load(uint8_t* buffer, int len, const vec3& dim, const OnTextureLoaded<Texture>& callback = [](const Texture&, const QImage&) {});
+	void unload();
+	
+	void onLoad(const uint8_t* pixelsRGBA) const;
 
-signals:
-    void deleted(UniformWidget* me);
+	bool valid() const          { return isValid; }
+	int width() const           { return size.x; }
+	int height() const          { return size.y; }
+	int depth() const           { return size.z; }
+	uint8_t* pixels() const     { return data; }
+	int pixelsSize() const      { return dataSize; }
+
+	bool compressed() const     { return isCompressed; }
+	GLenum glDataType() const   { return type; }
+	GLint glFormat() const      { return format; }
+	GLint glsRGBFormat() const  { return sRGBFormat; }
 
 private:
-    void resetUI();
-    void updateUI();
+	bool isValid;
+	vec3 size;
+	uint8_t* data;
+	int dataSize;
+	GLenum type;
+	GLint format;
+	GLint sRGBFormat;
+	bool isCompressed;
 
-    void resetShaderValue();
-    void updateShaderValue();
-
-    void updateNameAndType();
-
-    void chooseColor(const QColor& newColor = QColor());
-    void chooseTexture(const QString& path = "");
-
-
-    Ui::UniformWidget ui;
-    QString uniformName;
-    UniformType uniformType = MAX;
-    class Texture uniformTexture;
-    PreviewWidget* GLWidget;
-    
-    QVector<QWidget*> Row0;
-    QVector<QWidget*> Row1;
-    QVector<QWidget*> Row2;
-    QVector<QWidget*> Row3;
+	OnTextureLoaded<Texture> onLoadedCallback;
 };

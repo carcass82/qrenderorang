@@ -276,7 +276,7 @@ Mesh* Mesh::Load(const QString& filePath)
                 const int uvoffset = 2 * index.texcoord_index;
                 if (index.texcoord_index != -1)
                 {
-                    uv = vec2{ attrib.texcoords[uvoffset], attrib.vertices[uvoffset + 1] };
+                    uv = vec2{ attrib.texcoords[uvoffset], attrib.texcoords[uvoffset + 1] };
                 }
 
                 m_Vertices.push_back({ pos, normal, uv, vec3(.0), vec3(.0) });

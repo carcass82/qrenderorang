@@ -23,9 +23,6 @@
  ****************************************************************************/
 #include "UniformWidget.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb/stb_image.h"
-
 UniformWidget::UniformWidget(const QString& name, UniformType type, PreviewWidget* glWidget, QWidget* parent)
 	: QWidget(parent)
 	, GLWidget(glWidget)
@@ -308,15 +305,11 @@ void UniformWidget::updateShaderValue()
 	case Texture:
 	{
 		bool isSRGB = ui.uniformTextureSRGB->isChecked();
-		bool isHDR = !ui.uniformTextureSRGB->isEnabled();
-		auto texSize = ui.uniformTextureSize->text().split('x');
-		if (texSize.size() >= 2 && !uniformTextureData.isEmpty())
+		if (uniformTexture.valid())
 		{
-			int width = texSize[0].toInt();
-			int height = texSize[1].toInt();
-			int depth = (texSize.size() > 2? texSize[2].toInt() : 1);
-			GLWidget->setShaderResource(uniformName, uniformTextureData.constData(), width, height, depth, 4, isSRGB, isHDR);
+			GLWidget->setShaderResource(uniformName, uniformTexture, isSRGB);
 		}
+
 		break;
 	}
 
@@ -437,40 +430,25 @@ void UniformWidget::chooseTexture(const QString& path)
 		imagePath = QFileDialog::getOpenFileName(this,
 												 tr("Open Image"),
 												 QString(),
-												 tr("Images (*.jpg *.png *.tga *.bmp *.psd *.gif *.hdr *.pic *.png);;All files (*.*)"));
+												 tr("Images (*.jpg *.png *.tga *.bmp *.psd *.gif *.hdr *.pic *.png *.dds);;All files (*.*)"));
 	}
 
 	QPalette filePathColor(QApplication::palette(ui.uniformTexturePath));
+	
+	// callback to update UI with preview/size once image is loaded
+	auto onLoadedCallback = [preview = ui.uniformTexturePreview, info = ui.uniformTextureSize](const class Texture& loadedTexture, const QImage& asImage)
+	{
+		preview->setPixmap(QPixmap::fromImage(asImage).scaledToWidth(preview->minimumWidth()));
+		info->setText(QString("%1x%2").arg(QString::number(loadedTexture.width()), QString::number(loadedTexture.height())));
+	};
 
-	int width, height, bpp;
-	unsigned char* pixels = nullptr;
-
-	bool isHDR = stbi_is_hdr(qPrintable(imagePath));
-	pixels = ((isHDR)? (unsigned char*)stbi_loadf(qPrintable(imagePath), &width, &height, &bpp, 4) :
-	                                   stbi_load(qPrintable(imagePath), &width, &height, &bpp, 4));
-
-	if (pixels)
-    {
-		uniformTextureData = QByteArray(reinterpret_cast<const char*>(pixels), width * height * 4 * ((isHDR)? sizeof(float) : sizeof(unsigned char)));
-
-		unsigned char* preview_pixels = stbi_load(qPrintable(imagePath), &width, &height, &bpp, 4);
-
-        ui.uniformTexturePreview->setPixmap(QPixmap::fromImage(QImage(preview_pixels, width, height, QImage::Format_RGBA8888).scaledToWidth(ui.uniformTexturePreview->width())));
-		stbi_image_free(preview_pixels);
-
-		ui.uniformTextureSRGB->setEnabled(!isHDR);
-
-		ui.uniformTextureSize->setText(QString("%1x%2").arg(QString::number(width), QString::number(height)));
-
-        stbi_image_free(pixels);
-
-		updateShaderValue();
-    }
-	else
+	if (!uniformTexture.load(imagePath, onLoadedCallback))
 	{
 		filePathColor.setColor(QPalette::Text, Qt::red);
 	}
 
-	ui.uniformTexturePath->setPalette(QApplication::palette(ui.uniformTexturePath));
+	ui.uniformTexturePath->setPalette(filePathColor);
 	ui.uniformTexturePath->setText(imagePath);
+
+	updateShaderValue();
 }

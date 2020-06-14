@@ -864,7 +864,7 @@
              <item>
               <widget class="QCheckBox" name="uniformColorSRGB">
                <property name="toolTip">
-                <string>if this is true the color will be linearized before being set to the shader</string>
+                <string>if this is checked the color will be linearized before being set to the shader</string>
                </property>
                <property name="text">
                 <string>sRGB</string>
@@ -907,7 +907,7 @@
              <item>
               <widget class="QCheckBox" name="uniformTextureSRGB">
                <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;if this is true the color will be linearized before being set to the shader&lt;/p&gt;&lt;p&gt;(disabled when the image has been detected as HDR)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>if this is checked the color will be linearized before being set to the shader</string>
                </property>
                <property name="text">
                 <string>sRGB</string>

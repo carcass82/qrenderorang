@@ -38,6 +38,7 @@ using cc::math::pmax;
 using cc::math::max;
 using cc::math::min;
 using cc::math::clamp;
+using cc::math::lerp;
 using cc::math::radians;
 using cc::math::translate;
 using cc::math::rotate;

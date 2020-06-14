@@ -1,3 +1,5 @@
 - panorama images from: http://www.hdrlabs.com/sibl/archive.html
 - radiance/irradiance generated using cmftStudio (https://github.com/dariomanesku/cmftStudio)
+- PBR set bamboo-wood-semigloss from FreePBR (https://freepbr.com/materials/bamboo-wood-pbr-material)
+- PBR set helmet from "Damaged Helmet" (see models/README.md for license info)
 - uv tester generated using Blender (www.blender.org)

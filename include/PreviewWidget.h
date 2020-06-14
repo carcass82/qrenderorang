@@ -27,6 +27,7 @@
 #include <QMouseEvent>
 #include <QHash>
 #include "Common.h"
+#include "Texture.h"
 
 class Mesh;
 class Material;
@@ -55,7 +56,7 @@ public:
     void setShaderParameter(const QString& parameter, const mat3& value, bool remove = false);
     void setShaderParameter(const QString& parameter, const mat4& value, bool remove = false);
     
-    void setShaderResource(const QString& parameter, const char* pixels, int width, int height, int depth = 1, int bpp = 4, bool sRGB = true, bool HDR = false);
+    void setShaderResource(const QString& parameter, const Texture& texture, bool sRGB = true);
     void deleteShaderResource(const QString& parameter);
 
 protected:
@@ -109,6 +110,7 @@ private:
     GLuint m_SP = 0;
     GLuint m_UnlitSP = 0;
     GLuint m_SkySP = 0;
+    Texture defaultSkyTexture;
 
     bool m_uploadMaterialParams = false;
     QHash<QString, GLuint> textureParams;
@@ -130,10 +132,8 @@ private:
     struct TextureRequest
     {
         QString textureName;
-        vec3 textureSize;
+        const Texture* texture;
         bool textureSRGB;
-        bool textureHDR;
-        QByteArray textureData;
 
         bool remove;
     };
@@ -198,18 +198,14 @@ inline void PreviewWidget::resetUpdateMaterialFlag()
     m_uploadMaterialParams = false;
 }
 
-inline void PreviewWidget::setShaderResource(const QString& parameter, const char* pixels, int width, int height, int depth, int bpp, bool sRGB, bool HDR)
+inline void PreviewWidget::setShaderResource(const QString& parameter, const Texture& texture, bool sRGB)
 {
-    if (!parameter.isEmpty() && pixels && width > 0 && height > 0)
+    if (!parameter.isEmpty())
     {
         TextureRequest request;
         request.textureName = parameter;
-        request.textureSize.x = width;
-        request.textureSize.y = height;
-        request.textureSize.z = depth;
-        request.textureData = QByteArray(pixels, width * height * depth * bpp * ((HDR)? sizeof(float) : sizeof(unsigned char)));
+        request.texture = &texture;
         request.textureSRGB = sRGB;
-        request.textureHDR = HDR;
         request.remove = false;
 
         m_textureRequests.push_back(request);
@@ -222,8 +218,7 @@ inline void PreviewWidget::deleteShaderResource(const QString& parameter)
 {
     if (textureParams.contains(parameter))
     {
-        m_textureRequests.push_back({ parameter, vec3(), false, false, QByteArray(), true });
-        
+        m_textureRequests.push_back({ parameter, nullptr, true, true });
         update();
     }
 }
