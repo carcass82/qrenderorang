@@ -434,35 +434,42 @@ void PreviewWidget::updateResources()
             {
                 glBindTexture(GL_TEXTURE_2D, newTexture);
 
-                if (request.texture->compressed())
+                for (int i = 0; i < request.texture->getMipmapCount(); ++i)
                 {
-                    glCompressedTexImage2D(GL_TEXTURE_2D,
-                                           0,
-                                           request.textureSRGB? request.texture->glsRGBFormat() : request.texture->glFormat(),
-                                           request.texture->width(),
-                                           request.texture->height(),
-                                           0,
-                                           request.texture->pixelsSize(),
-                                           request.texture->pixels());
-                }
-                else
-                {
-                    glTexImage2D(GL_TEXTURE_2D,
-                                 0,
-                                 request.textureSRGB? request.texture->glsRGBFormat() : request.texture->glFormat(),
-                                 request.texture->width(),
-                                 request.texture->height(),
-                                 0,
-                                 GL_RGBA,
-                                 request.texture->glDataType(),
-                                 request.texture->pixels());
+                    if (request.texture->compressed())
+                    {
+                        glCompressedTexImage2D(GL_TEXTURE_2D,
+                                               i,
+                                               request.textureSRGB? request.texture->glsRGBFormat() : request.texture->glFormat(),
+                                               request.texture->width(i),
+                                               request.texture->height(i),
+                                               0,
+                                               request.texture->pixelsSize(i),
+                                               request.texture->pixels(i));
+                    }
+                    else
+                    {
+                        glTexImage2D(GL_TEXTURE_2D,
+                                     i,
+                                     request.textureSRGB? request.texture->glsRGBFormat() : request.texture->glFormat(),
+                                     request.texture->width(i),
+                                     request.texture->height(i),
+                                     0,
+                                     GL_RGBA,
+                                     request.texture->glDataType(),
+                                     request.texture->pixels(i));
+                    }
                 }
 
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_FALSE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, max(0, request.texture->getMipmapCount() - 1));
 
-                //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, request.texture->getMinFilter());
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, request.texture->getMagFilter());
+
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, request.texture->getWrapMode());
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, request.texture->getWrapMode());
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, request.texture->getWrapMode());
 
                 // read back as RGB for UI preview
                 unsigned char* rgba = new unsigned char[request.texture->width() * request.texture->height() * 4];

@@ -188,24 +188,14 @@ constexpr inline bool dds_supported_format(const DDSHeader& header, const DDSHea
     return supported;
 }
 
-enum Format { UNSUPPORTED = -1, DXT1, DXT5 };
-
-struct FormatDetails
+inline int dds_mipmap_count(const DDSHeader& header)
 {
-    uint8_t BytesPerBlock;
-    GLint Format;
-    GLint sRGBFormat;
-};
+    return (header.dwFlags & DDSD_MIPMAPCOUNT)? header.dwMipMapCount : 1;
+}
 
-FormatDetails Details[] =
+constexpr inline Texture::Format dds_compressed_format(const DDSHeader& header, const DDSHeader_DXT10& header10)
 {
-    { 8,  GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT }, // DXT1
-    { 16, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT }  // DXT5
-};
-
-constexpr inline Format dds_compressed_format(const DDSHeader& header, const DDSHeader_DXT10& header10)
-{
-    Format result = UNSUPPORTED;
+    Texture::Format result = Texture::UNSUPPORTED;
 
     DXGI_FORMAT format = header10.dxgiFormat;
     unsigned int flags = header.sPixelFormat.dwFlags;
@@ -215,27 +205,48 @@ constexpr inline Format dds_compressed_format(const DDSHeader& header, const DDS
     {
         if (format == DXGI_FORMAT_BC1_TYPELESS || format == DXGI_FORMAT_BC1_UNORM || format == DXGI_FORMAT_BC1_UNORM_SRGB)
         {
-            result = DXT1;
+            result = Texture::DXT1;
         }
         else if (format == DXGI_FORMAT_BC3_TYPELESS || format == DXGI_FORMAT_BC3_UNORM || format == DXGI_FORMAT_BC3_UNORM_SRGB)
         {
-            result = DXT5;
+            result = Texture::DXT5;
         }
     }
     else if ((flags & DDPF_FOURCC) == DDPF_FOURCC)
     {
         if (fourCC == DDS::dds_dxt_fourcc('D', 'X', 'T', '1'))
         {
-            result = DXT1;
+            result = Texture::DXT1;
         }
         else if (fourCC == DDS::dds_dxt_fourcc('D', 'X', 'T', '5'))
         {
-            result = DXT5;
+            result = Texture::DXT5;
         }
     }
 
     return result;
 }
+}
+
+namespace Details
+{
+struct FormatData
+{
+    bool Compressed;
+    bool HDR;
+    uint8_t BytesPerBlock;
+    GLenum DataType;
+    GLint Format;
+    GLint sRGBFormat;
+};
+
+FormatData Format[] =
+{
+    { false, false, sizeof(uint8_t), GL_UNSIGNED_BYTE, GL_RGBA,                          GL_SRGB_ALPHA },                          // RGBA
+    { false, false, sizeof(float),   GL_FLOAT,         GL_RGBA16F,                       GL_RGBA16F },                             // RGBA16
+    { true,  false, 8,               GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT }, // DXT1
+    { true,  false, 16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT }  // DXT5
+};
 }
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -263,6 +274,8 @@ bool Texture::load(uint8_t* buffer, int len, const vec3& dim, const OnTextureLoa
 	data = new uint8_t[dataSize];
 	memcpy(data, buffer, dataSize);
 
+    texFormat = RGBA;
+    mipmaps = 1;
 	format = GL_RGBA;
 	sRGBFormat = GL_SRGB_ALPHA;
 	type = GL_UNSIGNED_BYTE;
@@ -294,14 +307,21 @@ bool Texture::load(const QString& filename, const OnTextureLoaded<Texture>& call
 			size.y = height;
 			size.z = 1;
 
-			dataSize = width * height * 4 * ((isHDR)? sizeof(float) : sizeof(unsigned char));
+            texFormat = isHDR? Format::RGBA16 : Format::RGBA;
+
+			dataSize = width * height * 4 * Details::Format[texFormat].BytesPerBlock;
 			data = new uint8_t[dataSize];
 			memcpy(data, pixels, dataSize);
 
             isCompressed = false;
-			format = isHDR? GL_RGBA16F : GL_RGBA;
-			sRGBFormat = isHDR? GL_RGBA16F : GL_SRGB_ALPHA;
-			type = isHDR? GL_FLOAT : GL_UNSIGNED_BYTE;
+            mipmaps = 1;
+
+            format = Details::Format[texFormat].Format;
+			sRGBFormat = Details::Format[texFormat].sRGBFormat;
+			type = Details::Format[texFormat].DataType;
+            minFilter = GL_LINEAR;
+            magFilter = GL_LINEAR;
+            wrapMode = GL_REPEAT;
 
 			stbi_image_free(pixels);
 
@@ -328,25 +348,37 @@ bool Texture::load(const QString& filename, const OnTextureLoaded<Texture>& call
 
             if (DDS::dds_supported_format(header, header10))
             {
-                DDS::Format dds_format = DDS::dds_compressed_format(header, header10);
-                if (format != DDS::UNSUPPORTED)
+                texFormat = DDS::dds_compressed_format(header, header10);
+                if (format != UNSUPPORTED)
                 {
                     isValid = true;
                     isCompressed = true;
+
+                    mipmaps = DDS::dds_mipmap_count(header);
 
                     size.x = header.dwWidth;
                     size.y = header.dwHeight;
                     size.z = 1;
 
-                    dataSize = max(1u, ((header.dwWidth + 3u) / 4u)) *
-                               max(1u, ((header.dwHeight + 3u) / 4u)) *
-                               DDS::Details[dds_format].BytesPerBlock;
+                    dataSize = 0;
+                    unsigned int w = header.dwWidth;
+                    unsigned int h = header.dwHeight;
+                    for (int i = 0; i < mipmaps; ++i)
+                    {
+                        dataSize += max(1u, ((w + 3u) / 4u)) * max(1u, ((h + 3u) / 4u)) * Details::Format[texFormat].BytesPerBlock;
+
+                        w = max(1u, w / 2u);
+                        h = max(1u, h / 2u);
+                    }
 
                     data = new uint8_t[dataSize];
                     memcpy(data, bufPtr, dataSize);
 
-                    format = DDS::Details[dds_format].Format;
-                    sRGBFormat = DDS::Details[dds_format].sRGBFormat;
+                    format = Details::Format[texFormat].Format;
+                    sRGBFormat = Details::Format[texFormat].sRGBFormat;
+                    magFilter = GL_LINEAR;
+                    minFilter = (mipmaps > 1)? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR;
+                    wrapMode = GL_REPEAT;
 
                     onLoadedCallback = callback;
                     return true;
@@ -356,6 +388,65 @@ bool Texture::load(const QString& filename, const OnTextureLoaded<Texture>& call
 	}
 
 	return false;
+}
+
+int Texture::getMipOffset(int mipLevel) const
+{
+    int offset = 0;
+    unsigned int w = size.x;
+    unsigned int h = size.y;
+    for (int i = 0; i < mipLevel; ++i)
+    {
+        if (isCompressed)
+        {
+            offset += max(1u, ((w + 3u) / 4u)) * max(1u, ((h + 3u) / 4u)) * Details::Format[texFormat].BytesPerBlock;
+        }
+        else
+        {
+            offset += w * h * 4 * Details::Format[texFormat].BytesPerBlock;
+        }
+
+        w = max(1u, w / 2u);
+        h = max(1u, h / 2u);
+    }
+
+    return offset;
+}
+
+int Texture::getMipSize(int mipLevel) const
+{
+    unsigned int w = size.x;
+    unsigned int h = size.y;
+    for (int i = 0; i < mipLevel; ++i)
+    {
+        w = max(1u, w / 2u);
+        h = max(1u, h / 2u);
+    }
+
+    int dataSize = 0;
+    if (isCompressed)
+    {
+        dataSize = max(1u, ((w + 3u) / 4u)) * max(1u, ((h + 3u) / 4u)) * Details::Format[texFormat].BytesPerBlock;
+    }
+    else
+    {
+        dataSize = w * h * 4 * Details::Format[texFormat].BytesPerBlock;
+    }
+
+    return dataSize;
+}
+
+vec3 Texture::getMipDimension(int mipLevel) const
+{
+    unsigned int w = size.x;
+    unsigned int h = size.y;
+    for (int i = 0; i < mipLevel; ++i)
+    {
+        w = max(1u, w / 2u);
+        h = max(1u, h / 2u);
+    }
+
+    return vec3{ (float)w, (float)h, size.z };
 }
 
 void Texture::unload()

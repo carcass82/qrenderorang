@@ -46,19 +46,31 @@ public:
 	
 	void onLoad(const uint8_t* pixelsRGBA) const;
 
-	bool valid() const          { return isValid; }
-	int width() const           { return size.x; }
-	int height() const          { return size.y; }
-	int depth() const           { return size.z; }
-	uint8_t* pixels() const     { return data; }
-	int pixelsSize() const      { return dataSize; }
+	bool valid() const                 { return isValid; }
+	int width(int mip = 0) const       { return getMipDimension(mip).x; }
+	int height(int mip = 0) const      { return getMipDimension(mip).y; }
+	int depth(int mip = 0) const       { return getMipDimension(mip).z; }
+	uint8_t* pixels(int mip = 0) const { return &data[getMipOffset(mip)]; }
+	int pixelsSize(int mip = 0) const  { return getMipSize(mip); }
+	int getMipmapCount() const         { return mipmaps; }
 
-	bool compressed() const     { return isCompressed; }
-	GLenum glDataType() const   { return type; }
-	GLint glFormat() const      { return format; }
-	GLint glsRGBFormat() const  { return sRGBFormat; }
+	bool compressed() const            { return isCompressed; }
+	GLenum glDataType() const          { return type; }
+	GLint glFormat() const             { return format; }
+	GLint glsRGBFormat() const         { return sRGBFormat; }
+
+	GLint getMinFilter() const         { return minFilter; }
+	GLint getMagFilter() const         { return magFilter; }
+	GLint getWrapMode() const          { return wrapMode; }
+
+	enum Format { UNSUPPORTED = -1, RGBA, RGBA16, DXT1, DXT5 };
 
 private:
+	int getMipSize(int mipLevel) const;
+	int getMipOffset(int mipLevel) const;
+	vec3 getMipDimension(int mipLevel) const;
+
+	Format texFormat;
 	bool isValid;
 	vec3 size;
 	uint8_t* data;
@@ -67,6 +79,10 @@ private:
 	GLint format;
 	GLint sRGBFormat;
 	bool isCompressed;
+	int mipmaps;
+	GLint minFilter;
+	GLint magFilter;
+	GLint wrapMode;
 
 	OnTextureLoaded<Texture> onLoadedCallback;
 };
