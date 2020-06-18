@@ -95,7 +95,14 @@ enum DXGI_FORMAT
     DXGI_FORMAT_BC2_UNORM_SRGB,
     DXGI_FORMAT_BC3_TYPELESS,
     DXGI_FORMAT_BC3_UNORM,
-    DXGI_FORMAT_BC3_UNORM_SRGB
+    DXGI_FORMAT_BC3_UNORM_SRGB,
+    // [...]
+    DXGI_FORMAT_BC6H_TYPELESS  = 94,
+    DXGI_FORMAT_BC6H_UF16,
+    DXGI_FORMAT_BC6H_SF16,
+    DXGI_FORMAT_BC7_TYPELESS,
+    DXGI_FORMAT_BC7_UNORM,
+    DXGI_FORMAT_BC7_UNORM_SRGB
     // [...]
 };
 
@@ -177,7 +184,9 @@ constexpr inline bool dds_supported_format(const DDSHeader& header, const DDSHea
 
     bool supportedFourCC = (fourCC == DDS::dds_dxt_fourcc('D', 'X', 'T', '1') || fourCC == DDS::dds_dxt_fourcc('D', 'X', 'T', '5'));
     bool supportedDXGI = (dxgiFmt == DXGI_FORMAT_BC1_TYPELESS || dxgiFmt == DXGI_FORMAT_BC1_UNORM || dxgiFmt == DXGI_FORMAT_BC1_UNORM_SRGB ||
-                          dxgiFmt == DXGI_FORMAT_BC3_TYPELESS || dxgiFmt == DXGI_FORMAT_BC3_UNORM || dxgiFmt == DXGI_FORMAT_BC3_UNORM_SRGB);
+                          dxgiFmt == DXGI_FORMAT_BC3_TYPELESS || dxgiFmt == DXGI_FORMAT_BC3_UNORM || dxgiFmt == DXGI_FORMAT_BC3_UNORM_SRGB ||
+                          dxgiFmt == DXGI_FORMAT_BC6H_TYPELESS || dxgiFmt == DXGI_FORMAT_BC6H_SF16 || dxgiFmt == DXGI_FORMAT_BC6H_UF16     ||
+                          dxgiFmt == DXGI_FORMAT_BC7_TYPELESS || dxgiFmt == DXGI_FORMAT_BC7_UNORM || dxgiFmt == DXGI_FORMAT_BC7_UNORM_SRGB);
 
     bool texture2d = !extheader || (extheader && header10.resourceDimension == D3D10_RESOURCE_DIMENSION_TEXTURE2D);
     bool texture3d = ((header.dwCaps2 & DDSCAPS2_VOLUME) == DDSCAPS2_VOLUME);
@@ -205,22 +214,30 @@ constexpr inline Texture::Format dds_compressed_format(const DDSHeader& header, 
     {
         if (format == DXGI_FORMAT_BC1_TYPELESS || format == DXGI_FORMAT_BC1_UNORM || format == DXGI_FORMAT_BC1_UNORM_SRGB)
         {
-            result = Texture::DXT1;
+            result = Texture::BC1;
         }
         else if (format == DXGI_FORMAT_BC3_TYPELESS || format == DXGI_FORMAT_BC3_UNORM || format == DXGI_FORMAT_BC3_UNORM_SRGB)
         {
-            result = Texture::DXT5;
+            result = Texture::BC3;
+        }
+        else if (format == DXGI_FORMAT_BC6H_TYPELESS || format == DXGI_FORMAT_BC6H_SF16 || format == DXGI_FORMAT_BC6H_UF16)
+        {
+            result = Texture::BC6H;
+        }
+        else if (format == DXGI_FORMAT_BC7_TYPELESS || format == DXGI_FORMAT_BC7_UNORM || format == DXGI_FORMAT_BC7_UNORM_SRGB)
+        {
+            result = Texture::BC7;
         }
     }
     else if ((flags & DDPF_FOURCC) == DDPF_FOURCC)
     {
         if (fourCC == DDS::dds_dxt_fourcc('D', 'X', 'T', '1'))
         {
-            result = Texture::DXT1;
+            result = Texture::BC1;
         }
         else if (fourCC == DDS::dds_dxt_fourcc('D', 'X', 'T', '5'))
         {
-            result = Texture::DXT5;
+            result = Texture::BC3;
         }
     }
 
@@ -242,10 +259,12 @@ struct FormatData
 
 FormatData Format[] =
 {
-    { false, false, sizeof(uint8_t), GL_UNSIGNED_BYTE, GL_RGBA,                          GL_SRGB_ALPHA },                          // RGBA
-    { false, false, sizeof(float),   GL_FLOAT,         GL_RGBA16F,                       GL_RGBA16F },                             // RGBA16
-    { true,  false, 8,               GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT }, // DXT1
-    { true,  false, 16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT }  // DXT5
+    { false, false, sizeof(uint8_t), GL_UNSIGNED_BYTE, GL_RGBA,                               GL_SRGB_ALPHA },                          // RGBA
+    { false, false, sizeof(float),   GL_FLOAT,         GL_RGBA16F,                            GL_RGBA16F },                             // RGBA16
+    { true,  false, 8,               GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,      GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT }, // DXT1
+    { true,  false, 16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,      GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT }, // DXT5
+    { true,  true,  16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT, GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT },  // BC6H
+    { true,  false, 16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_BPTC_UNORM,         GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM }     // BC7
 };
 }
 
@@ -361,14 +380,16 @@ bool Texture::load(const QString& filename, const OnTextureLoaded<Texture>& call
                     size.z = 1;
 
                     dataSize = 0;
-                    unsigned int w = header.dwWidth;
-                    unsigned int h = header.dwHeight;
+                    unsigned int w = size.x;
+                    unsigned int h = size.y;
+                    unsigned int d = size.z;
                     for (int i = 0; i < mipmaps; ++i)
                     {
-                        dataSize += max(1u, ((w + 3u) / 4u)) * max(1u, ((h + 3u) / 4u)) * Details::Format[texFormat].BytesPerBlock;
+                        dataSize += max(1u, ((w + 3u) / 4u)) * max(1u, ((h + 3u) / 4u)) * max(1u, ((d + 3u) / 4u)) * Details::Format[texFormat].BytesPerBlock;
 
                         w = max(1u, w / 2u);
                         h = max(1u, h / 2u);
+                        d = max(1u, d / 2u);
                     }
 
                     data = new uint8_t[dataSize];
@@ -395,19 +416,21 @@ int Texture::getMipOffset(int mipLevel) const
     int offset = 0;
     unsigned int w = size.x;
     unsigned int h = size.y;
+    unsigned int d = size.z;
     for (int i = 0; i < mipLevel; ++i)
     {
         if (isCompressed)
         {
-            offset += max(1u, ((w + 3u) / 4u)) * max(1u, ((h + 3u) / 4u)) * Details::Format[texFormat].BytesPerBlock;
+            offset += max(1u, ((w + 3u) / 4u)) * max(1u, ((h + 3u) / 4u)) * max(1u, ((d + 3u) / 4u)) * Details::Format[texFormat].BytesPerBlock;
         }
         else
         {
-            offset += w * h * 4 * Details::Format[texFormat].BytesPerBlock;
+            offset += w * h * d * 4 * Details::Format[texFormat].BytesPerBlock;
         }
 
         w = max(1u, w / 2u);
         h = max(1u, h / 2u);
+        d = max(1u, d / 2u);
     }
 
     return offset;
@@ -417,20 +440,22 @@ int Texture::getMipSize(int mipLevel) const
 {
     unsigned int w = size.x;
     unsigned int h = size.y;
+    unsigned int d = size.z;
     for (int i = 0; i < mipLevel; ++i)
     {
         w = max(1u, w / 2u);
         h = max(1u, h / 2u);
+        d = max(1u, d / 2u);
     }
 
     int dataSize = 0;
     if (isCompressed)
     {
-        dataSize = max(1u, ((w + 3u) / 4u)) * max(1u, ((h + 3u) / 4u)) * Details::Format[texFormat].BytesPerBlock;
+        dataSize = max(1u, ((w + 3u) / 4u)) * max(1u, ((h + 3u) / 4u)) * max(1u, ((d + 3u) / 4u)) * Details::Format[texFormat].BytesPerBlock;
     }
     else
     {
-        dataSize = w * h * 4 * Details::Format[texFormat].BytesPerBlock;
+        dataSize = w * h * d * 4 * Details::Format[texFormat].BytesPerBlock;
     }
 
     return dataSize;
@@ -440,13 +465,15 @@ vec3 Texture::getMipDimension(int mipLevel) const
 {
     unsigned int w = size.x;
     unsigned int h = size.y;
+    unsigned int d = size.z;
     for (int i = 0; i < mipLevel; ++i)
     {
         w = max(1u, w / 2u);
         h = max(1u, h / 2u);
+        d = max(1u, d / 2u);
     }
 
-    return vec3{ (float)w, (float)h, size.z };
+    return { (float)w, (float)h, (float)d };
 }
 
 void Texture::unload()
