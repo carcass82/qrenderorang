@@ -97,6 +97,10 @@ enum DXGI_FORMAT
     DXGI_FORMAT_BC3_UNORM,
     DXGI_FORMAT_BC3_UNORM_SRGB,
     // [...]
+    DXGI_FORMAT_BC5_TYPELESS   = 82,
+    DXGI_FORMAT_BC5_UNORM,
+    DXGI_FORMAT_BC5_SNORM,
+    // [...]
     DXGI_FORMAT_BC6H_TYPELESS  = 94,
     DXGI_FORMAT_BC6H_UF16,
     DXGI_FORMAT_BC6H_SF16,
@@ -185,6 +189,7 @@ constexpr inline bool dds_supported_format(const DDSHeader& header, const DDSHea
     bool supportedFourCC = (fourCC == DDS::dds_dxt_fourcc('D', 'X', 'T', '1') || fourCC == DDS::dds_dxt_fourcc('D', 'X', 'T', '5'));
     bool supportedDXGI = (dxgiFmt == DXGI_FORMAT_BC1_TYPELESS || dxgiFmt == DXGI_FORMAT_BC1_UNORM || dxgiFmt == DXGI_FORMAT_BC1_UNORM_SRGB ||
                           dxgiFmt == DXGI_FORMAT_BC3_TYPELESS || dxgiFmt == DXGI_FORMAT_BC3_UNORM || dxgiFmt == DXGI_FORMAT_BC3_UNORM_SRGB ||
+                          dxgiFmt == DXGI_FORMAT_BC5_TYPELESS || dxgiFmt == DXGI_FORMAT_BC5_UNORM || dxgiFmt == DXGI_FORMAT_BC5_SNORM ||
                           dxgiFmt == DXGI_FORMAT_BC6H_TYPELESS || dxgiFmt == DXGI_FORMAT_BC6H_SF16 || dxgiFmt == DXGI_FORMAT_BC6H_UF16     ||
                           dxgiFmt == DXGI_FORMAT_BC7_TYPELESS || dxgiFmt == DXGI_FORMAT_BC7_UNORM || dxgiFmt == DXGI_FORMAT_BC7_UNORM_SRGB);
 
@@ -220,6 +225,10 @@ constexpr inline Texture::Format dds_compressed_format(const DDSHeader& header, 
         {
             result = Texture::BC3;
         }
+        else if (format == DXGI_FORMAT_BC5_TYPELESS || format == DXGI_FORMAT_BC5_UNORM || format == DXGI_FORMAT_BC5_SNORM)
+        {
+            result = Texture::BC5;
+        }
         else if (format == DXGI_FORMAT_BC6H_TYPELESS || format == DXGI_FORMAT_BC6H_UF16)
         {
             result = Texture::BC6HU;
@@ -254,7 +263,6 @@ namespace Details
 struct FormatData
 {
     bool Compressed;
-    bool HDR;
     uint8_t BytesPerBlock;
     GLenum DataType;
     GLint Format;
@@ -263,13 +271,14 @@ struct FormatData
 
 FormatData Format[] =
 {
-    { false, false, sizeof(uint8_t), GL_UNSIGNED_BYTE, GL_RGBA,                               GL_SRGB_ALPHA },                          // RGBA
-    { false, false, sizeof(float),   GL_FLOAT,         GL_RGBA16F,                            GL_RGBA16F },                             // RGBA16
-    { true,  false, 8,               GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,      GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT }, // DXT1
-    { true,  false, 16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,      GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT }, // DXT5
-    { true,  true,  16,              GL_FLOAT,         GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT, GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT },  // BC6H Unsigned
-    { true,  true,  16,              GL_FLOAT,         GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT,   GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT },    // BC6H Signed
-    { true,  false, 16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_BPTC_UNORM,         GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM }     // BC7
+    { false, sizeof(uint8_t), GL_UNSIGNED_BYTE, GL_RGBA,                               GL_SRGB_ALPHA },                          // RGBA
+    { false, sizeof(float),   GL_FLOAT,         GL_RGBA16F,                            GL_RGBA16F },                             // RGBA16
+    { true,  8,               GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,      GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT }, // BC1
+    { true,  16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,      GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT }, // BC3
+    { true,  16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RG_RGTC2,                GL_COMPRESSED_RG_RGTC2 },                 // BC5
+    { true,  16,              GL_FLOAT,         GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT, GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT },  // BC6H Unsigned
+    { true,  16,              GL_FLOAT,         GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT,   GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT },    // BC6H Signed
+    { true,  16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_BPTC_UNORM,         GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM }     // BC7
 };
 }
 
