@@ -220,9 +220,13 @@ constexpr inline Texture::Format dds_compressed_format(const DDSHeader& header, 
         {
             result = Texture::BC3;
         }
-        else if (format == DXGI_FORMAT_BC6H_TYPELESS || format == DXGI_FORMAT_BC6H_SF16 || format == DXGI_FORMAT_BC6H_UF16)
+        else if (format == DXGI_FORMAT_BC6H_TYPELESS || format == DXGI_FORMAT_BC6H_UF16)
         {
-            result = Texture::BC6H;
+            result = Texture::BC6HU;
+        }
+        else if (format == DXGI_FORMAT_BC6H_SF16)
+        {
+            result = Texture::BC6HS;
         }
         else if (format == DXGI_FORMAT_BC7_TYPELESS || format == DXGI_FORMAT_BC7_UNORM || format == DXGI_FORMAT_BC7_UNORM_SRGB)
         {
@@ -263,7 +267,8 @@ FormatData Format[] =
     { false, false, sizeof(float),   GL_FLOAT,         GL_RGBA16F,                            GL_RGBA16F },                             // RGBA16
     { true,  false, 8,               GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,      GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT }, // DXT1
     { true,  false, 16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,      GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT }, // DXT5
-    { true,  true,  16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT, GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT },  // BC6H
+    { true,  true,  16,              GL_FLOAT,         GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT, GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT },  // BC6H Unsigned
+    { true,  true,  16,              GL_FLOAT,         GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT,   GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT },    // BC6H Signed
     { true,  false, 16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_BPTC_UNORM,         GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM }     // BC7
 };
 }

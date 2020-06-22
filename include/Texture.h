@@ -63,7 +63,7 @@ public:
 	GLint getMagFilter() const         { return magFilter; }
 	GLint getWrapMode() const          { return wrapMode; }
 
-	enum Format { UNSUPPORTED = -1, RGBA, RGBA16, BC1, BC3, BC6H, BC7 };
+	enum Format { UNSUPPORTED = -1, RGBA, RGBA16, BC1, BC3, BC6HU, BC6HS, BC7 };
 
 private:
 	int getMipSize(int mipLevel) const;
