@@ -262,6 +262,7 @@ namespace Details
 {
 struct FormatData
 {
+    const char* Description;
     bool Compressed;
     uint8_t BytesPerBlock;
     GLenum DataType;
@@ -271,14 +272,14 @@ struct FormatData
 
 FormatData Format[] =
 {
-    { false, sizeof(uint8_t), GL_UNSIGNED_BYTE, GL_RGBA,                               GL_SRGB_ALPHA },                          // RGBA
-    { false, sizeof(float),   GL_FLOAT,         GL_RGBA16F,                            GL_RGBA16F },                             // RGBA16
-    { true,  8,               GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,      GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT }, // BC1
-    { true,  16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,      GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT }, // BC3
-    { true,  16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RG_RGTC2,                GL_COMPRESSED_RG_RGTC2 },                 // BC5
-    { true,  16,              GL_FLOAT,         GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT, GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT },  // BC6H Unsigned
-    { true,  16,              GL_FLOAT,         GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT,   GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT },    // BC6H Signed
-    { true,  16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_BPTC_UNORM,         GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM }     // BC7
+    { "RGBA8",   false, sizeof(uint8_t), GL_UNSIGNED_BYTE, GL_RGBA,                               GL_SRGB_ALPHA },                          // RGBA
+    { "RGBA16F", false, sizeof(float),   GL_FLOAT,         GL_RGBA16F,                            GL_RGBA16F },                             // RGBA16
+    { "BC1",     true,  8,               GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,      GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT }, // BC1
+    { "BC3",     true,  16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT,      GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT }, // BC3
+    { "BC5",     true,  16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RG_RGTC2,                GL_COMPRESSED_RG_RGTC2 },                 // BC5
+    { "BC6H",    true,  16,              GL_FLOAT,         GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT, GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT },  // BC6H Unsigned
+    { "BC6H",    true,  16,              GL_FLOAT,         GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT,   GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT },    // BC6H Signed
+    { "BC7",     true,  16,              GL_UNSIGNED_BYTE, GL_COMPRESSED_RGBA_BPTC_UNORM,         GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM }     // BC7
 };
 }
 
@@ -504,4 +505,9 @@ void Texture::onLoad(const uint8_t* pixelsRGBA) const
 	{
 		onLoadedCallback(*this, QImage(pixelsRGBA, width(), height(), QImage::Format_RGBA8888));
 	}
+}
+
+QString Texture::description() const
+{
+    return (texFormat != Texture::UNSUPPORTED)? Details::Format[texFormat].Description : "";
 }

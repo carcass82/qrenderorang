@@ -59,6 +59,8 @@ public:
 	GLint glFormat() const             { return format; }
 	GLint glsRGBFormat() const         { return sRGBFormat; }
 
+	QString description() const;
+
 	GLint getMinFilter() const         { return minFilter; }
 	GLint getMagFilter() const         { return magFilter; }
 	GLint getWrapMode() const          { return wrapMode; }

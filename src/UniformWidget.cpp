@@ -439,7 +439,9 @@ void UniformWidget::chooseTexture(const QString& path)
 	auto onLoadedCallback = [preview = ui.uniformTexturePreview, info = ui.uniformTextureSize](const class Texture& loadedTexture, const QImage& asImage)
 	{
 		preview->setPixmap(QPixmap::fromImage(asImage).scaledToWidth(preview->minimumWidth()));
-		info->setText(QString("%1x%2").arg(QString::number(loadedTexture.width()), QString::number(loadedTexture.height())));
+		info->setText(QString("%1x%2 (%3)").arg(QString::number(loadedTexture.width()),
+		                                        QString::number(loadedTexture.height()),
+		                                        loadedTexture.description()));
 	};
 
 	if (!uniformTexture.load(imagePath, onLoadedCallback))
