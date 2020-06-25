@@ -1,3 +1,5 @@
+![Build Status](https://github.com/carcass82/qrenderorang/workflows/C/C++%20CI/badge.svg)
+    
     ##############################################################################
     #     ____    ____                 __          ____                          #
     #    / __ \  / __ \___  ____  ____/ /__  _____/ __ \_________ _____  ____ _  #
@@ -15,10 +17,9 @@ A toy IDE for GLSL shader authoring inspired by [AMD RenderMonkey](https://gpuop
 
 ## REQUIREMENTS: ##
 * [Qt 5](http://www.qt.io)
-(see ext/DEPS.txt for details)
 
 
-## QUICK BUILDING: ##
+## QUICK BUILD: ##
 * cd into the project source directory
 * $ qmake
 * $ make
