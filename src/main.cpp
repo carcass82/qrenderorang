@@ -27,7 +27,7 @@
 #include "MainWidget.h"
 
 #if defined(_WIN32)
- #if defined(MSVC)
+ #if defined(_MSC_VER)
   #define DLLEXPORT extern "C" _declspec(dllexport)
  #else
   #define DLLEXPORT extern "C" __attribute__((dllexport))
