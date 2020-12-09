@@ -223,6 +223,10 @@ Mesh* Mesh::Load(MeshType Shape)
     case CUSTOM:
         return Load(m_Path);
 
+
+    default:
+        LOG("Mesh load failed, wrong type");
+        break;
     }
 
     ComputeBoundingBox();

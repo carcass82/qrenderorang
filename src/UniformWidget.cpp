@@ -181,6 +181,8 @@ void UniformWidget::load(const QJsonObject& data)
 			break;
 		}
 
+        default:
+            break;
 		}
 	}
 }
@@ -260,6 +262,9 @@ QJsonObject UniformWidget::save() const
 		uniform["flags"] = ui.uniformTextureSRGB->isChecked()? "sRGB" : "RGB";
 		break;
 	}
+
+    default:
+        break;
 	}
 
 	return uniform;
@@ -341,22 +346,28 @@ void UniformWidget::updateUI()
 
 	switch (uniformType)
 	{
-	case Float: for (int i = 0; i < 1; ++i) Row0[i]->setVisible(true); break;
+    case Float: for (int i = 0; i < 1; ++i) Row0[i]->setVisible(true);
+                break;
 
-	case Vec2:  for (int i = 0; i < 2; ++i) Row0[i]->setVisible(true); break;
+    case Vec2:  for (int i = 0; i < 2; ++i) Row0[i]->setVisible(true);
+                break;
 
-	case Vec3:  for (int i = 0; i < 3; ++i) Row0[i]->setVisible(true); break;
+    case Vec3:  for (int i = 0; i < 3; ++i) Row0[i]->setVisible(true);
+                break;
 
-	case Vec4:  for (int i = 0; i < 4; ++i) Row0[i]->setVisible(true); break;
+    case Vec4:  for (int i = 0; i < 4; ++i) Row0[i]->setVisible(true);
+                break;
 
 	case Mat3:  for (int i = 0; i < 3; ++i) Row0[i]->setVisible(true);
 				for (int i = 0; i < 3; ++i) Row1[i]->setVisible(true);
-				for (int i = 0; i < 3; ++i) Row2[i]->setVisible(true); break;
+                for (int i = 0; i < 3; ++i) Row2[i]->setVisible(true);
+                break;
 
 	case Mat4:  for (int i = 0; i < 4; ++i) Row0[i]->setVisible(true);
 				for (int i = 0; i < 4; ++i) Row1[i]->setVisible(true);
 				for (int i = 0; i < 4; ++i) Row2[i]->setVisible(true);
-				for (int i = 0; i < 4; ++i) Row3[i]->setVisible(true); break;
+                for (int i = 0; i < 4; ++i) Row3[i]->setVisible(true);
+                break;
 
 	case Color:
 		ui.uniformColorPreview->setVisible(true);
@@ -388,6 +399,7 @@ void UniformWidget::resetShaderValue()
 	case Mat4:    GLWidget->setShaderParameter(uniformName, mat4(), true); break;
 	case Color:   GLWidget->setShaderParameter(uniformName, vec4(), true); break;
 	case Texture: GLWidget->deleteShaderResource(uniformName);             break;
+    default:                                                               break;
 	}
 }
 
