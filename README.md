@@ -16,7 +16,7 @@ A toy IDE for GLSL shader authoring inspired by [AMD RenderMonkey](https://gpuop
 
 
 ## REQUIREMENTS: ##
-* [Qt 5](http://www.qt.io)
+* [Qt 6](http://www.qt.io)
 
 
 ## QUICK BUILD: ##
