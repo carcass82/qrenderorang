@@ -77,34 +77,34 @@ GLSLSyntaxHlighter::GLSLSyntaxHlighter(QTextDocument* parent)
     //
     // register all parsing rules
     //
-    foreach(QString pattern, keywords)  { highlightingRules.append({ QRegExp("\\b" + pattern + "\\b"),      keywordsFormat }); }
+    foreach(QString pattern, keywords)  { highlightingRules.append({ QRegularExpression("\\b" + pattern + "\\b"),      keywordsFormat }); }
     
-    foreach(QString pattern, builtins)  { highlightingRules.append({ QRegExp("\\b" + pattern + "\\b"),      builtinsFormat }); }
+    foreach(QString pattern, builtins)  { highlightingRules.append({ QRegularExpression("\\b" + pattern + "\\b"),      builtinsFormat }); }
     
-    foreach(QString pattern, functions) { highlightingRules.append({ QRegExp("\\b" + pattern + "+(?=\\()"), functionFormat }); }
+    foreach(QString pattern, functions) { highlightingRules.append({ QRegularExpression("\\b" + pattern + "+(?=\\()"), functionFormat }); }
 
-    highlightingRules.append({ QRegExp("^\\s*#[^\n]*"), preprocessorFormat });
+    highlightingRules.append({ QRegularExpression("^\\s*#[^\n]*"), preprocessorFormat });
 
-    highlightingRules.append({ QRegExp("//[^\n]*"), commentFormat });
+    highlightingRules.append({ QRegularExpression("//[^\n]*"), commentFormat });
 }
 
 void GLSLSyntaxHlighter::highlightBlock(const QString &text)
 {
     foreach(HighlightingRule rule, highlightingRules)
     {
-        QRegExp expression(rule.pattern);
-        int index = text.indexOf(expression);
-        while (index >= 0)
+        QRegularExpression expression(rule.pattern);
+
+        auto match = expression.globalMatch(text);
+        while (match.hasNext())
         {
-            int length = expression.matchedLength();
-            setFormat(index, length, rule.format);
-            index = text.indexOf(expression, index + length);
+            auto currentMatch = match.next();
+            setFormat(currentMatch.capturedStart(), currentMatch.capturedLength(), rule.format);
         }
     }
 
     // multiline comment management
-    QRegExp commentStartExpression("/\\*");
-    QRegExp commentEndExpression("\\*/");
+    QRegularExpression commentStartExpression("/\\*");
+    QRegularExpression commentEndExpression("\\*/");
 
     setCurrentBlockState(0);
 
@@ -126,7 +126,7 @@ void GLSLSyntaxHlighter::highlightBlock(const QString &text)
         }
         else
         {
-            commentLength = endIndex - startIndex + commentEndExpression.matchedLength();
+            commentLength = endIndex - startIndex + 2;
         }
 
         setFormat(startIndex, commentLength, commentFormat);

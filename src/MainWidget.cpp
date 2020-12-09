@@ -359,8 +359,8 @@ void MainWidget::setupEditor()
     m_textFrag->setFont(fixedfont);
 
     QFontMetrics metrics(fixedfont);
-    m_textVert->setTabStopWidth(4 * metrics.width(' '));
-    m_textFrag->setTabStopWidth(4 * metrics.width(' '));
+    m_textVert->setTabStopDistance(4 * metrics.horizontalAdvance(' '));
+    m_textFrag->setTabStopDistance(4 * metrics.horizontalAdvance(' '));
 
     m_textVertHL = new GLSLSyntaxHlighter(m_textVert->document());
     m_textFragHL = new GLSLSyntaxHlighter(m_textFrag->document());

@@ -25,6 +25,7 @@
 #include <QPainter>
 #include <QPoint>
 #include <QElapsedTimer>
+#include <QColorSpace>
 #include "ShaderEditor.h"
 #include "Mesh.h"
 
@@ -35,7 +36,7 @@ PreviewWidget::PreviewWidget(QWidget* parent)
     glFormat.setVersion(3, 3);
     glFormat.setProfile(QSurfaceFormat::CompatibilityProfile);
     glFormat.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
-    glFormat.setColorSpace(QSurfaceFormat::sRGBColorSpace);
+    glFormat.setColorSpace(QColorSpace::SRgb);
     glFormat.setSamples(4);
 
     setFormat(glFormat);
@@ -238,7 +239,7 @@ void PreviewWidget::paintGL()
 void PreviewWidget::renderText(const vec2& textPos, const QString& str, const vec4& color, const QFont& font)
 {
     QFontMetrics fontMetrics(font);
-    vec2 textSize(fontMetrics.width(str), fontMetrics.height());
+    vec2 textSize(fontMetrics.horizontalAdvance(str), fontMetrics.height());
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);

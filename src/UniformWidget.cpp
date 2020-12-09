@@ -249,7 +249,7 @@ QJsonObject UniformWidget::save() const
 
 	case Color:
 	{
-		uniform["value"] = ui.uniformColorPreview->palette().background().color().name(QColor::HexArgb);
+        uniform["value"] = ui.uniformColorPreview->palette().color(QPalette::Base).name(QColor::HexArgb);
 		uniform["flags"] = ui.uniformColorSRGB->isChecked()? "sRGB" : "RGB";
 		break;
 	}
@@ -295,7 +295,7 @@ void UniformWidget::updateShaderValue()
 
 	case Color:
 	{
-		QColor uiColor = ui.uniformColorPreview->palette().background().color();
+        QColor uiColor = ui.uniformColorPreview->palette().color(QPalette::Base);
 		bool isSRGB = ui.uniformColorSRGB->isChecked();
 		vec4 color(uiColor.redF(), uiColor.greenF(), uiColor.blueF(), uiColor.alphaF());
 		GLWidget->setShaderParameter(uniformName, (isSRGB? linear(color) : color));
@@ -404,7 +404,7 @@ void UniformWidget::updateNameAndType()
 
 void UniformWidget::chooseColor(const QColor& newColor)
 {
-	const QColor color = newColor.isValid()? newColor : QColorDialog::getColor(ui.uniformColorPreview->palette().background().color(),
+    const QColor color = newColor.isValid()? newColor : QColorDialog::getColor(ui.uniformColorPreview->palette().color(QPalette::Base),
 																			   this,
 																			   "Select Color",
 																			   QColorDialog::ShowAlphaChannel);

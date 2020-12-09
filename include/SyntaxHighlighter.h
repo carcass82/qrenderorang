@@ -23,6 +23,7 @@
  ****************************************************************************/
 #pragma once
 #include <QSyntaxHighlighter>
+#include <QRegularExpression>
 
 class GLSLSyntaxHlighter : public QSyntaxHighlighter
 {
@@ -37,7 +38,7 @@ private:
 
     struct HighlightingRule
     {
-        QRegExp pattern;
+        QRegularExpression pattern;
         QTextCharFormat format;
     };
     QVector<HighlightingRule> highlightingRules;

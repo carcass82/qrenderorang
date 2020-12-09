@@ -26,6 +26,17 @@
 #include <QtWidgets>
 #include "MainWidget.h"
 
+#if defined(_WIN32)
+ #if defined(MSVC)
+  #define DLLEXPORT extern "C" _declspec(dllexport)
+ #else
+  #define DLLEXPORT extern "C" __attribute__((dllexport))
+ #endif
+#endif
+
+DLLEXPORT unsigned int NvOptimusEnablement = 0x00000001;
+
+
 int main(int argc, char** argv)
 {
 	QApplication app(argc, argv);

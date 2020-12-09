@@ -25,6 +25,7 @@
 #include <QPlainTextEdit>
 #include <QDateTime>
 #include <QDebug>
+#include <QRegularExpression>
 
 #include "cclib/cclib.h"
 using cc::math::PI;
@@ -108,14 +109,14 @@ public:
 
     QSet<int> error(const QString& log)
     {
-        static const QRegExp lineNumberFinder(R"re(0\((\d+)\) : error)re");
+        static const QRegularExpression lineNumberFinder(R"re(0\((\d+)\) : error)re");
 
         QSet<int> foundLines;
-        int pos = 0;
-        while ((pos = lineNumberFinder.indexIn(log, pos)) != -1)
+
+        auto match = lineNumberFinder.globalMatch(log);
+        while (match.hasNext())
         {
-            foundLines.insert(lineNumberFinder.cap(1).toInt());
-            pos += lineNumberFinder.matchedLength();
+            foundLines.insert(match.next().captured(1).toInt());
         }
 
         return foundLines;
