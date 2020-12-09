@@ -32,6 +32,8 @@
  #else
   #define DLLEXPORT extern "C" __attribute__((dllexport))
  #endif
+#else
+ #define DLLEXPORT
 #endif
 
 DLLEXPORT unsigned int NvOptimusEnablement = 0x00000001;
