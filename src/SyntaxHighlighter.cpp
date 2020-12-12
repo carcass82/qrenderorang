@@ -65,7 +65,7 @@ GLSLSyntaxHlighter::GLSLSyntaxHlighter(QTextDocument* parent)
                           "gl_(FrontFacing|MaterialParameters|MultiTexCoord[0-7])" };
 
     // functions
-    QStringList functions{ "texture([1-3]D(Lod|Proj(Lod)?)?|Cube(Lod)?)?)|(shadow[1-2]D(Lod|Proj(Lod)?)?",
+    QStringList functions{ "texture([1-3]D(Lod|Proj(Lod)?)?|Cube(Lod)?)?|shadow[1-2]D(Lod|Proj(Lod)?)?",
                            "ceil", "clamp", "floor", "fract", "trunc", "min", "max", "mix", "(mod(f)?)", "sign", "abs",
                            "sin", "cos", "tan", "asin", "acos", "atan", "asinh", "acosh", "atanh" "radians", "degrees", "is(inf|nan)",
                            "pow", "((exp|log)(2)?)", "(inverse)?sqrt", "noise[1-4]", "(round(Even)?)",
@@ -81,7 +81,7 @@ GLSLSyntaxHlighter::GLSLSyntaxHlighter(QTextDocument* parent)
     
     foreach(QString pattern, builtins)  { highlightingRules.append({ QRegularExpression("\\b" + pattern + "\\b"),      builtinsFormat }); }
     
-    foreach(QString pattern, functions) { highlightingRules.append({ QRegularExpression("\\b" + pattern + "+(?=\\()"), functionFormat }); }
+    foreach(QString pattern, functions) { highlightingRules.append({ QRegularExpression("\\b" + pattern + "\\b(?=\\()"), functionFormat }); }
 
     highlightingRules.append({ QRegularExpression("^\\s*#[^\n]*"), preprocessorFormat });
 
