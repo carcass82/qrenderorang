@@ -28,7 +28,7 @@
 
 #if defined(_WIN32)
  #if defined(_MSC_VER)
-  #define DLLEXPORT extern "C" _declspec(dllexport)
+  #define DLLEXPORT extern "C" __declspec(dllexport)
  #else
   #define DLLEXPORT extern "C" __attribute__((dllexport))
  #endif
