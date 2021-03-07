@@ -28,6 +28,8 @@
 #include <QPainter>
 #include <QTextBlock>
 #include <QScrollBar>
+#include <QMenu>
+#include <QFontDialog>
 
 ShaderEditor::ShaderEditor(QWidget* parent)
 	: QPlainTextEdit(parent)
@@ -39,6 +41,22 @@ ShaderEditor::ShaderEditor(QWidget* parent)
     connect(this, &ShaderEditor::cursorPositionChanged, this, &ShaderEditor::updateHighlighting);
 
     updateLineNumberAreaWidth(0);
+}
+
+void ShaderEditor::changeEditorFont()
+{
+    setFont(QFontDialog::getFont(nullptr, this->font(), this));
+}
+
+void ShaderEditor::contextMenuEvent(QContextMenuEvent* event)
+{
+    if (QMenu* menu = createStandardContextMenu())
+    {
+        menu->addSeparator();
+        menu->addAction(tr("Select Font"), this, &ShaderEditor::changeEditorFont);
+        menu->exec(event->globalPos());
+        delete menu;
+    }
 }
 
 int ShaderEditor::lineNumberAreaWidth()
