@@ -77,9 +77,9 @@ GLSLSyntaxHlighter::GLSLSyntaxHlighter(QTextDocument* parent)
     //
     // register all parsing rules
     //
-    foreach(QString pattern, keywords)  { highlightingRules.append({ QRegularExpression("\\b" + pattern + "\\b"),      keywordsFormat }); }
+    foreach(QString pattern, keywords)  { highlightingRules.append({ QRegularExpression("\\b" + pattern + "\\b"), keywordsFormat }); }
     
-    foreach(QString pattern, builtins)  { highlightingRules.append({ QRegularExpression("\\b" + pattern + "\\b"),      builtinsFormat }); }
+    foreach(QString pattern, builtins)  { highlightingRules.append({ QRegularExpression("\\b" + pattern + "\\b"), builtinsFormat }); }
     
     foreach(QString pattern, functions) { highlightingRules.append({ QRegularExpression("\\b" + pattern + "\\b(?=\\()"), functionFormat }); }
 
