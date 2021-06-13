@@ -276,6 +276,8 @@ void MainWidget::setupActions()
 
     connect(ui.actionWireframe,   &QAction::triggered, this, [this]{ ui.actionWireframe->setChecked(glWidget->toggleWireframe()); });
     connect(ui.actionUnlit,       &QAction::triggered, this, [this]{ ui.actionUnlit->setChecked(glWidget->toggleUnlit()); });
+
+    connect(ui.buttonAddUniform,  &QToolButton::clicked, this, &MainWidget::addUniform);
 }
 
 UniformWidget* MainWidget::addUniform()

@@ -14,7 +14,7 @@ set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_AUTOUIC_SEARCH_PATHS "${PROJECT_SOURCE_DIR}/ui/")
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets OpenGL OpenGLWidgets)
+find_package(Qt6 CONFIG REQUIRED COMPONENTS Core Gui Widgets OpenGL OpenGLWidgets)
 
 include_directories(./include ./ext)
 
@@ -41,5 +41,11 @@ set(FORMS "ui/qrenderorang.ui"
 
 set(RESOURCES "ui/qrenderorang.qrc")
 
-qt6_add_executable(QRenderOrang ${SOURCES} ${INCLUDES} ${FORMS} ${RESOURCES})
+if(WIN32)
+	set(WIN32_MAIN WIN32)
+endif()
+
+qt6_add_executable(QRenderOrang ${WIN32_MAIN} ${SOURCES} ${INCLUDES} ${FORMS} ${RESOURCES})
 target_link_libraries(QRenderOrang PRIVATE Qt6::Widgets Qt6::OpenGLWidgets)
+
+set_target_properties(QRenderOrang PROPERTIES VS_DEBUGGER_ENVIRONMENT "PATH=%PATH%;$<TARGET_FILE_DIR:Qt6::Core>")
