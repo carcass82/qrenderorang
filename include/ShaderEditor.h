@@ -41,6 +41,9 @@ public:
 
     void highlightLine(const QSet<int>& lineNumbers, const QColor& highlightColor = QColor(Qt::red).lighter());
 
+signals:
+    void changeFont(const QFont& newFont);
+
 protected:
     void resizeEvent(QResizeEvent* event) override;
     void contextMenuEvent(QContextMenuEvent* event);

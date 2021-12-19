@@ -278,6 +278,9 @@ void MainWidget::setupActions()
     connect(ui.actionUnlit,       &QAction::triggered, this, [this]{ ui.actionUnlit->setChecked(glWidget->toggleUnlit()); });
 
     connect(ui.buttonAddUniform,  &QToolButton::clicked, this, &MainWidget::addUniform);
+
+    connect(m_textFrag, &ShaderEditor::changeFont, this, [this](const QFont& font) { m_textFrag->setFont(font); m_textVert->setFont(font); });
+    connect(m_textVert, &ShaderEditor::changeFont, this, [this](const QFont& font) { m_textFrag->setFont(font); m_textVert->setFont(font); });
 }
 
 UniformWidget* MainWidget::addUniform()

@@ -45,7 +45,7 @@ ShaderEditor::ShaderEditor(QWidget* parent)
 
 void ShaderEditor::changeEditorFont()
 {
-    setFont(QFontDialog::getFont(nullptr, this->font(), this));
+    emit changeFont(QFontDialog::getFont(nullptr, this->font(), this));
 }
 
 void ShaderEditor::contextMenuEvent(QContextMenuEvent* event)
